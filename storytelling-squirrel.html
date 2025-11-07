@@ -1,862 +1,438 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Storytelling Squirrel - Central Park Adventures</title>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-                sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            overflow: hidden;
-        }
-        #root {
-            width: 100%;
-            height: 100vh;
-            position: relative;          /* NEW: ensures HUD z-index works reliably */
-        }
-        .decorative { pointer-events: none; } /* NEW: decorative layers won't eat clicks */
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Storytelling Squirrel – Central Park Adventures (v2)</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    /* ---------------------- Theme & Reset ---------------------- */
+    :root {
+      --day-sky-1: #87ceeb;
+      --day-sky-2: #b0e0e6;
+      --night-sky-1: #1a1a2e;
+      --night-sky-2: #16213e;
+      --ground-day: #90ee90;
+      --ground-night: #2d5016;
+      --ink: #4a3728;
+      --panel-bg: rgba(255, 249, 240, 0.96);
+      --panel-border: rgba(255, 255, 255, 0.9);
+      --hud-brown-1: rgba(139, 69, 19, 0.95);
+      --hud-brown-2: rgba(160, 82, 45, 0.9);
+      --hud-brown-border: rgba(101, 67, 33, 0.8);
+      --ring: 0 0 0 3px rgba(70, 130, 180, 0.35);
+      --radius-xl: 50px;
+      --radius-md: 25px;
+      --shadow-1: 0 10px 40px rgba(0,0,0,0.15), 0 3px 12px rgba(0,0,0,0.1);
+      --shadow-2: 0 8px 30px rgba(0,0,0,0.3);
+      --shadow-soft: 0 4px 15px rgba(0,0,0,0.12);
+      --accent: #d4a574;
+    }
 
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.8); }
-            to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes cloudFloat1 {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(calc(100vw + 200px)); }
-        }
-        @keyframes cloudFloat2 {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(calc(100vw + 250px)); }
-        }
-        @keyframes cloudFloat3 {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(calc(100vw + 300px)); }
-        }
-        @keyframes cloudFloat4 {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(calc(100vw + 180px)); }
-        }
-    </style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; padding: 0;
+      font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Inter, system-ui, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+      overflow: hidden; color: var(--ink);
+    }
+    #root { width: 100%; height: 100vh; position: relative; }
+    .decorative { pointer-events: none; }
+
+    /* ---------------------- Motion ---------------------- */
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    @keyframes fadeIn { from{opacity:0; transform:scale(.98)} to{opacity:1; transform:scale(1)} }
+    @keyframes cloudFloat1 { 0%{transform:translateX(-100px)} 100%{transform:translateX(calc(100vw + 200px))} }
+    @keyframes cloudFloat2 { 0%{transform:translateX(-150px)} 100%{transform:translateX(calc(100vw + 250px))} }
+    @keyframes cloudFloat3 { 0%{transform:translateX(-200px)} 100%{transform:translateX(calc(100vw + 300px))} }
+    @keyframes cloudFloat4 { 0%{transform:translateX(-80px)} 100%{transform:translateX(calc(100vw + 180px))} }
+
+    /* Respect user preference */
+    @media (prefers-reduced-motion: reduce) {
+      * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+    }
+
+    /* ---------------------- Buttons & Controls ---------------------- */
+    .btn {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .btn:focus-visible { outline: none; box-shadow: var(--ring); }
+    .hud-card { backdrop-filter: blur(10px); box-shadow: var(--shadow-soft); border: 2px solid var(--panel-border); }
+
+    /* Compact on very small screens */
+    @media (max-width: 480px) {
+      .hud-label { display: none; }
+    }
+  </style>
 </head>
 <body>
-<div id="root"></div>
+  <div id="root"></div>
 
-<script type="text/babel">
-const { useState, useEffect } = React;
+  <script type="text/babel">
+    const { useEffect, useMemo, useRef, useState } = React;
 
-const StorytellingSquirrel = () => {
-  const stories = [
-    { text: "There was a bag of nuts or trail mix under a tree - pigeons were eating at it - so I would come up and fight pigeons off, get a nut and go eat it away from humans. Then, the pigeons come back, and I go back to bag and fight them off again - and I repeat!",
-      time: "AM", furColor: "gray", title: "The Pigeon Battle", expression: "determined" },
-    { text: "I stood like a park kangaroo...poised to punch. The human was still while I approached. I was the Mike Tyson of hectare 15-I!",
-      time: "PM", furColor: "cinnamon", title: "Mike Tyson Mode", expression: "confident" },
-    { text: "There was a pretty obvious turf war happening in my tree. A scurry of claws on bark, a rustle of leaves and a shower of falling acorns. I was obviously perturbed that another squirrel had found itself in MY tree, and ran him right out of town!",
-      time: "AM", furColor: "cinnamon", title: "Turf War", expression: "angry" },
-    { text: "The black squirrel attracted a ton of attention. A lot of people stopped to take pictures of me and I was completely unfazed. I actually came closer to one person and then stood up on my hind legs!",
-      time: "PM", furColor: "black", title: "Celebrity Status", expression: "confident" },
-    { text: "We squirrels were indifferent to the humans, but not to each other. When another squirrel came near me, I chased them soundlessly. We resolved our differences and were later in the same area without dispute. It was a morning for chasing!",
-      time: "AM", furColor: "gray", title: "Morning Chase", expression: "excited" },
-    { text: "I was pulling new leaves into my tree hole while a couple was biking nearby. Then I dropped a branch on a human's head. Oops! The human came back and stared at me while I ate acorns. I was still very pleased with myself!",
-      time: "PM", furColor: "gray", title: "Tree Decorating", expression: "mischievous" },
-    { text: "Turns out we squirrels eat mushrooms! And we're picky about which ones. I ate a mushroom -- but only the biggest one out of about 6 on the field. Quality over quantity!",
-      time: "AM", furColor: "cinnamon", title: "Mushroom Connoisseur", expression: "happy" },
-    { text: "I climbed up onto a tree and came about 2 feet away from a human, then hung upside down and sort of lunged at them with my torso - not aggressive, more playful! They thought I was very cute, duh!",
-      time: "PM", furColor: "cinnamon", title: "Playful Acrobatics", expression: "playful" },
-    { text: "The squirrels around here were running very fast through the grass. We even chased some humans. I felt as if we were more aggressive in this part of central park than in the other parts.",
-      time: "AM", furColor: "gray", title: "Fast and Aggressive", expression: "determined" },
-    { text: "One of us was munching on an entire sandwich. Not clear whether it was found or stolen. I'm not saying which...",
-      time: "PM", furColor: "gray", title: "Mysterious Sandwich", expression: "sneaky" },
-    { text: "Just past the info kiosk is a funny London planetree with an enormous trunk base that suddenly gets very skinny. A lady was dancing to a boombox, and it seemed like I was dancing along, while my friend was just staring. Then, a dad teaching his daughter to play volleyball scared us and we ran away. We must have been scared of the ball!",
-      time: "AM", furColor: "cinnamon", title: "Dance Party", expression: "playful" },
-    { text: "There was a party in the gardens and they were taking so many engagement pictures! I ran across the path with an acorn in my mouth. I noticed the humans, but didn't react except to move more slowly. Then a loud human scared me and I dropped my acorn and ran into the bushes!",
-      time: "PM", furColor: "black", title: "Wedding Crasher", expression: "scared" },
-    { text: "I was being chased by a small child while another child was yelling and screaming to go on the carousel again. Later I got into fights with other squirrels. There was a drumset playing just outside the area. People on a rock by the playground were smoking something, and I was sitting on a branch in a tree feeling upset, maybe due to the smell! It was a rough day.",
-      time: "AM", furColor: "gray", title: "Chaos at the Playground", expression: "sad" },
-    { text: "A large white Golden Retriever scared me! There were people walking dogs without a leash. I had to run away fast!",
-      time: "PM", furColor: "cinnamon", title: "Dog Scare", expression: "scared" },
-    { text: "A woman who was in a race was trying to balance a mobile phone on a rock to take a selfie. I jumped up right next to her phone with no fear. I wanted food! The woman annoyedly shooed me away.",
-      time: "AM", furColor: "gray", title: "Selfie Photobomb", expression: "confident" },
-    { text: "After the human only saw one squirrel in 10 minutes, I suddenly hit a them on the head with nuts from above!",
-      time: "PM", furColor: "gray", title: "Nut Bombing", expression: "mischievous" },
-    { text: "I was threatened by this human's presence and stared them down for the whole time they were recording me. In the space near the Arsenal and 5th Avenue is a tall tree with a plastic bag stuffed in a hole about 20 feet up. Did an animal put it there? Maybe!",
-      time: "AM", furColor: "cinnamon", title: "Stare Down", expression: "suspicious" },
-    { text: "I approached a human to make their acquaintance. I noticed their intrusion but did not show signs of distress. They parked themselves an acorn's drop from my white belly and stared up at my perch. We held a respectful gaze, me taking in their lowly figure and them paying reverence to my throne. Then I motioned to the dogs to the west. It was time for our revels to end.",
-      time: "PM", furColor: "black", title: "The Respectful Encounter", expression: "curious" },
-    { text: "Someone accidentally discovered people in a compromising situation in the woods. Their friend, in a loudly colored cloak, was trying to hide with the cloak, but it really only drew attention. I ran fast and disappeared - possibly they saw me before or maybe I was a different squirrel!",
-      time: "AM", furColor: "gray", title: "Woods Mystery", expression: "sneaky" },
-    { text: "There was hula-hoop dance practice happening! My friend and I were playing with each other nearby, having the time of our lives!",
-      time: "PM", furColor: "cinnamon", title: "Hula Hoop Fun", expression: "happy" },
-    { text: "A guy with a big white mustache and binoculars told someone that a squirrel broke into his house. And, in another instance, a raccoon. Was it me? I'm not telling!",
-      time: "AM", furColor: "gray", title: "The Break-In", expression: "mischievous" },
-    { text: "Two humans were in a tree, kissing. Yuck! They did not appreciate observers. We squirrels were running away from them. They took our tree!",
-      time: "PM", furColor: "gray", title: "Tree Thieves", expression: "angry" },
-    { text: "The runners from a race were singing songs and we squirrels were all dancing with our friends! What a party!",
-      time: "AM", furColor: "cinnamon", title: "Race Day Dancing", expression: "happy" },
-    { text: "Human thought this was bonkers. Squirrels chasing squirrels! Related looking squirrels! They thought it was a squirrel soap opera unfolding. But, no, there were hardly any dogs around, which was very unusual!",
-      time: "PM", furColor: "black", title: "Squirrel Soap Opera", expression: "excited" }
-  ];
+    function useKeybinds(map) {
+      useEffect(() => {
+        const onKey = (e) => {
+          const key = e.key.toLowerCase();
+          if (map[key]) {
+            e.preventDefault();
+            map[key]();
+          }
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+      }, [map]);
+    }
 
-  const [storyIndex, setStoryIndex] = useState(0);
-  const [acornCount, setAcornCount] = useState(1);
-  const [timeLeft, setTimeLeft] = useState(20);
-  const [canFeed, setCanFeed] = useState(true);
-  const [storiesHeard, setStoriesHeard] = useState(0);
-  const [showingStory, setShowingStory] = useState(false);
-  const [storyTimer, setStoryTimer] = useState(null);
+    const stories = [
+      { text: "There was a bag of nuts or trail mix under a tree - pigeons were eating at it - so I would come up and fight pigeons off, get a nut and go eat it away from humans. Then, the pigeons come back, and I go back to bag and fight them off again - and I repeat!", time: "AM", furColor: "gray", title: "The Pigeon Battle", expression: "determined" },
+      { text: "I stood like a park kangaroo...poised to punch. The human was still while I approached. I was the Mike Tyson of hectare 15-I!", time: "PM", furColor: "cinnamon", title: "Mike Tyson Mode", expression: "confident" },
+      { text: "There was a pretty obvious turf war happening in my tree. A scurry of claws on bark, a rustle of leaves and a shower of falling acorns. I was obviously perturbed that another squirrel had found itself in MY tree, and ran him right out of town!", time: "AM", furColor: "cinnamon", title: "Turf War", expression: "angry" },
+      { text: "The black squirrel attracted a ton of attention. A lot of people stopped to take pictures of me and I was completely unfazed. I actually came closer to one person and then stood up on my hind legs!", time: "PM", furColor: "black", title: "Celebrity Status", expression: "confident" },
+      { text: "We squirrels were indifferent to the humans, but not to each other. When another squirrel came near me, I chased them soundlessly. We resolved our differences and were later in the same area without dispute. It was a morning for chasing!", time: "AM", furColor: "gray", title: "Morning Chase", expression: "excited" },
+      { text: "I was pulling new leaves into my tree hole while a couple was biking nearby. Then I dropped a branch on a human's head. Oops! The human came back and stared at me while I ate acorns. I was still very pleased with myself!", time: "PM", furColor: "gray", title: "Tree Decorating", expression: "mischievous" },
+      { text: "Turns out we squirrels eat mushrooms! And we're picky about which ones. I ate a mushroom -- but only the biggest one out of about 6 on the field. Quality over quantity!", time: "AM", furColor: "cinnamon", title: "Mushroom Connoisseur", expression: "happy" },
+      { text: "I climbed up onto a tree and came about 2 feet away from a human, then hung upside down and sort of lunged at them with my torso - not aggressive, more playful! They thought I was very cute, duh!", time: "PM", furColor: "cinnamon", title: "Playful Acrobatics", expression: "playful" },
+      { text: "The squirrels around here were running very fast through the grass. We even chased some humans. I felt as if we were more aggressive in this part of central park than in the other parts.", time: "AM", furColor: "gray", title: "Fast and Aggressive", expression: "determined" },
+      { text: "One of us was munching on an entire sandwich. Not clear whether it was found or stolen. I'm not saying which...", time: "PM", furColor: "gray", title: "Mysterious Sandwich", expression: "sneaky" },
+      { text: "Just past the info kiosk is a funny London planetree with an enormous trunk base that suddenly gets very skinny. A lady was dancing to a boombox, and it seemed like I was dancing along, while my friend was just staring. Then, a dad teaching his daughter to play volleyball scared us and we ran away. We must have been scared of the ball!", time: "AM", furColor: "cinnamon", title: "Dance Party", expression: "playful" },
+      { text: "There was a party in the gardens and they were taking so many engagement pictures! I ran across the path with an acorn in my mouth. I noticed the humans, but didn't react except to move more slowly. Then a loud human scared me and I dropped my acorn and ran into the bushes!", time: "PM", furColor: "black", title: "Wedding Crasher", expression: "scared" },
+      { text: "I was being chased by a small child while another child was yelling and screaming to go on the carousel again. Later I got into fights with other squirrels. There was a drumset playing just outside the area. People on a rock by the playground were smoking something, and I was sitting on a branch in a tree feeling upset, maybe due to the smell! It was a rough day.", time: "AM", furColor: "gray", title: "Chaos at the Playground", expression: "sad" },
+      { text: "A large white Golden Retriever scared me! There were people walking dogs without a leash. I had to run away fast!", time: "PM", furColor: "cinnamon", title: "Dog Scare", expression: "scared" },
+      { text: "A woman who was in a race was trying to balance a mobile phone on a rock to take a selfie. I jumped up right next to her phone with no fear. I wanted food! The woman annoyedly shooed me away.", time: "AM", furColor: "gray", title: "Selfie Photobomb", expression: "confident" },
+      { text: "After the human only saw one squirrel in 10 minutes, I suddenly hit a them on the head with nuts from above!", time: "PM", furColor: "gray", title: "Nut Bombing", expression: "mischievous" },
+      { text: "I was threatened by this human's presence and stared them down for the whole time they were recording me. In the space near the Arsenal and 5th Avenue is a tall tree with a plastic bag stuffed in a hole about 20 feet up. Did an animal put it there? Maybe!", time: "AM", furColor: "cinnamon", title: "Stare Down", expression: "suspicious" },
+      { text: "I approached a human to make their acquaintance. I noticed their intrusion but did not show signs of distress. They parked themselves an acorn's drop from my white belly and stared up at my perch. We held a respectful gaze, me taking in their lowly figure and them paying reverence to my throne. Then I motioned to the dogs to the west. It was time for our revels to end.", time: "PM", furColor: "black", title: "The Respectful Encounter", expression: "curious" },
+      { text: "Someone accidentally discovered people in a compromising situation in the woods. Their friend, in a loudly colored cloak, was trying to hide with the cloak, but it really only drew attention. I ran fast and disappeared - possibly they saw me before or maybe I was a different squirrel!", time: "AM", furColor: "gray", title: "Woods Mystery", expression: "sneaky" },
+      { text: "There was hula-hoop dance practice happening! My friend and I were playing with each other nearby, having the time of our lives!", time: "PM", furColor: "cinnamon", title: "Hula Hoop Fun", expression: "happy" },
+      { text: "A guy with a big white mustache and binoculars told someone that a squirrel broke into his house. And, in another instance, a raccoon. Was it me? I'm not telling!", time: "AM", furColor: "gray", title: "The Break-In", expression: "mischievous" },
+      { text: "Two humans were in a tree, kissing. Yuck! They did not appreciate observers. We squirrels were running away from them. They took our tree!", time: "PM", furColor: "gray", title: "Tree Thieves", expression: "angry" },
+      { text: "The runners from a race were singing songs and we squirrels were all dancing with our friends! What a party!", time: "AM", furColor: "cinnamon", title: "Race Day Dancing", expression: "happy" },
+      { text: "Human thought this was bonkers. Squirrels chasing squirrels! Related looking squirrels! They thought it was a squirrel soap opera unfolding. But, no, there were hardly any dogs around, which was very unusual!", time: "PM", furColor: "black", title: "Squirrel Soap Opera", expression: "excited" },
+    ];
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          setCanFeed(true);
-          setAcornCount(c => c + 1);
-          return 20;
-        }
-        return prev - 1;
+    function StorytellingSquirrel() {
+      const [storyIndex, setStoryIndex] = useState(0);
+      const [acornCount, setAcornCount] = useState(1);
+      const [timeLeft, setTimeLeft] = useState(20);
+      const [storiesHeard, setStoriesHeard] = useState(0);
+      const [showingStory, setShowingStory] = useState(false);
+      const [storyTimer, setStoryTimer] = useState(null);
+
+      // Settings
+      const [highContrast, setHighContrast] = useState(false);
+      const [bigText, setBigText] = useState(false);
+      const [reducedMotion, setReducedMotion] = useState(false);
+
+      const currentStory = stories[storyIndex];
+      const isNight = showingStory && currentStory.time === 'PM';
+
+      useEffect(() => {
+        const t = setInterval(() => {
+          setTimeLeft((prev) => {
+            if (prev <= 1) { setAcornCount((c) => c + 1); return 20; }
+            return prev - 1;
+          });
+        }, 1000);
+        return () => clearInterval(t);
+      }, []);
+
+      useKeybinds({
+        ' ': () => { if (!showingStory && acornCount > 0) feedSquirrel(); },
+        'n': () => { if (showingStory) moveToNextSquirrel(); },
       });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
-  const feedSquirrel = () => {
-    if (acornCount > 0 && canFeed) {
-      setAcornCount(c => c - 1);
-      setShowingStory(true);
-      setStoriesHeard(s => s + 1);
-      const timer = setTimeout(() => {
-        moveToNextSquirrel();
-      }, 30000);
-      setStoryTimer(timer);
-    }
-  };
+      const feedSquirrel = () => {
+        if (acornCount <= 0) return;
+        setAcornCount((c) => c - 1);
+        setShowingStory(true);
+        setStoriesHeard((s) => s + 1);
+        const timer = setTimeout(() => { moveToNextSquirrel(); }, 30000);
+        setStoryTimer(timer);
+      };
 
-  const moveToNextSquirrel = () => {
-    if (storyTimer) {
-      clearTimeout(storyTimer);
-      setStoryTimer(null);
-    }
-    setShowingStory(false);
-    setStoryIndex((prev) => {
-      const nextIndex = (prev + 1) % stories.length;
-      if (nextIndex === 0) setStoriesHeard(0);
-      return nextIndex;
-    });
-  };
+      const moveToNextSquirrel = () => {
+        if (storyTimer) { clearTimeout(storyTimer); setStoryTimer(null); }
+        setShowingStory(false);
+        setStoryIndex((prev) => {
+          const next = (prev + 1) % stories.length;
+          if (next === 0) setStoriesHeard(0);
+          return next;
+        });
+      };
 
-  const currentStory = stories[storyIndex];
-  const isNight = showingStory && currentStory.time === 'PM';
+      const getSky = () => isNight
+        ? `linear-gradient(to bottom, var(--night-sky-1) 0%, var(--night-sky-2) 100%)`
+        : `linear-gradient(to bottom, var(--day-sky-1) 0%, var(--day-sky-2) 100%)`;
 
-  const getSquirrelColor = (furColor) => {
-    switch (furColor) {
-      case 'gray': return '#8B8680';
-      case 'cinnamon': return '#A0522D';
-      case 'black': return '#2C2C2C';
-      default: return '#8B8680';
-    }
-  };
+      const getSquirrelColor = (furColor) => ({
+        gray: '#8B8680', cinnamon: '#A0522D', black: '#2C2C2C',
+      })[furColor] || '#8B8680';
 
-  const getExpression = (expression) => {
-    const expressions = {
-      determined: { eyeY: 78, eyeSize: 6, mouthCurve: 0, eyebrowAngle: -5 },
-      angry: { eyeY: 76, eyeSize: 5, mouthCurve: -3, eyebrowAngle: -8 },
-      excited: { eyeY: 78, eyeSize: 7, mouthCurve: 3, eyebrowAngle: 3 },
-      confident: { eyeY: 80, eyeSize: 6, mouthCurve: 2, eyebrowAngle: -2 },
-      happy: { eyeY: 78, eyeSize: 7, mouthCurve: 5, eyebrowAngle: 5 },
-      mischievous: { eyeY: 78, eyeSize: 6, mouthCurve: 1, eyebrowAngle: 8 },
-      playful: { eyeY: 78, eyeSize: 8, mouthCurve: 4, eyebrowAngle: 6 },
-      suspicious: { eyeY: 78, eyeSize: 5, mouthCurve: -1, eyebrowAngle: -6 },
-      sneaky: { eyeY: 80, eyeSize: 5, mouthCurve: 1, eyebrowAngle: 4 },
-      scared: { eyeY: 76, eyeSize: 8, mouthCurve: -2, eyebrowAngle: 8 },
-      dreamy: { eyeY: 78, eyeSize: 7, mouthCurve: 3, eyebrowAngle: 2 },
-      curious: { eyeY: 78, eyeSize: 8, mouthCurve: 0, eyebrowAngle: 5 },
-      sad: { eyeY: 80, eyeSize: 6, mouthCurve: -3, eyebrowAngle: 6 },
-      waiting: { eyeY: 78, eyeSize: 7, mouthCurve: 0, eyebrowAngle: 2 }
-    };
-    return expressions[expression] || expressions.waiting;
-  };
+      const getExpression = (expression) => ({
+        determined: { eyeY: 78, eyeSize: 6, mouthCurve: 0, eyebrowAngle: -5 },
+        angry: { eyeY: 76, eyeSize: 5, mouthCurve: -3, eyebrowAngle: -8 },
+        excited: { eyeY: 78, eyeSize: 7, mouthCurve: 3, eyebrowAngle: 3 },
+        confident: { eyeY: 80, eyeSize: 6, mouthCurve: 2, eyebrowAngle: -2 },
+        happy: { eyeY: 78, eyeSize: 7, mouthCurve: 5, eyebrowAngle: 5 },
+        mischievous: { eyeY: 78, eyeSize: 6, mouthCurve: 1, eyebrowAngle: 8 },
+        playful: { eyeY: 78, eyeSize: 8, mouthCurve: 4, eyebrowAngle: 6 },
+        suspicious: { eyeY: 78, eyeSize: 5, mouthCurve: -1, eyebrowAngle: -6 },
+        sneaky: { eyeY: 80, eyeSize: 5, mouthCurve: 1, eyebrowAngle: 4 },
+        scared: { eyeY: 76, eyeSize: 8, mouthCurve: -2, eyebrowAngle: 8 },
+        dreamy: { eyeY: 78, eyeSize: 7, mouthCurve: 3, eyebrowAngle: 2 },
+        curious: { eyeY: 78, eyeSize: 8, mouthCurve: 0, eyebrowAngle: 5 },
+        sad: { eyeY: 80, eyeSize: 6, mouthCurve: -3, eyebrowAngle: 6 },
+        waiting: { eyeY: 78, eyeSize: 7, mouthCurve: 0, eyebrowAngle: 2 },
+      })[expression] || { eyeY: 78, eyeSize: 7, mouthCurve: 0, eyebrowAngle: 2 };
 
-  const getSkyColor = () => (
-    isNight
-      ? 'linear-gradient(to bottom, #1a1a2e 0%, #16213e 100%)'
-      : 'linear-gradient(to bottom, #87CEEB 0%, #B0E0E6 100%)'
-  );
+      const formatTime = (s) => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+      /* ---------------------- Render Helpers ---------------------- */
+      const Buildings = () => {
+        const arr = useMemo(() => Array.from({ length: 25 }, (_, i) => i), []);
+        return (
+          <div className="decorative" style={{
+            position: 'absolute', bottom: '30%', left: 0, right: 0, height: '25%',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '2px',
+            opacity: isNight ? (highContrast ? 0.7 : 0.55) : (highContrast ? 0.5 : 0.35), width: '100%',
+            transition: 'opacity .8s ease'
+          }}>
+            {arr.map((i) => {
+              const h = 100 + Math.random() * 120;
+              const w = 25 + Math.random() * 40;
+              const op = 0.55 + Math.random() * 0.25;
+              const lights = Math.floor(h / 25);
+              return (
+                <div key={i} style={{ position:'relative', width: w, height: h,
+                  background: isNight ? '#0f0f1e' : '#3a4a5a', opacity: op }}>
+                  {isNight && Array.from({length: lights}).map((_, j) => (
+                    <React.Fragment key={j}>
+                      <div style={{ position:'absolute', top: 15 + j*25, left: w*0.25, width:4, height:4,
+                        background: Math.random()>0.3? '#FFD700':'#FFA500', borderRadius: 1,
+                        boxShadow: j===0? '0 0 3px rgba(255,215,0,.5)':'none' }} />
+                      {w>35 && (
+                        <div style={{ position:'absolute', top: 15 + j*25, right: w*0.25, width:4, height:4,
+                          background: Math.random()>0.3? '#FFD700':'#FFA500', borderRadius: 1 }} />
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        );
+      };
 
-  const generateBuildings = () => {
-    const buildings = [];
-    const buildingCount = 25;
-    for (let i = 0; i < buildingCount; i++) {
-      const height = 100 + Math.random() * 120;
-      const width = 25 + Math.random() * 40;
-      const opacity = 0.55 + Math.random() * 0.25;
-      const lightsCount = Math.floor(height / 25);
-      buildings.push(
-        <div key={i} style={{
-          position: 'relative',
-          width: `${width}px`,
-          height: `${height}px`,
-          background: isNight ? '#0f0f1e' : '#3a4a5a',
-          opacity
-        }}>
-          {isNight && [...Array(lightsCount)].map((_, j) => (
-            <React.Fragment key={j}>
-              <div style={{
-                position: 'absolute',
-                top: `${15 + j * 25}px`,
-                left: `${width * 0.25}px`,
-                width: '4px',
-                height: '4px',
-                background: Math.random() > 0.3 ? '#FFD700' : '#FFA500',
-                borderRadius: '1px',
-                boxShadow: j === 0 ? '0 0 3px rgba(255, 215, 0, 0.5)' : 'none'
-              }} />
-              {width > 35 && (
-                <div style={{
-                  position: 'absolute',
-                  top: `${15 + j * 25}px`,
-                  right: `${width * 0.25}px`,
-                  width: '4px',
-                  height: '4px',
-                  background: Math.random() > 0.3 ? '#FFD700' : '#FFA500',
-                  borderRadius: '1px'
-                }} />
-              )}
-            </React.Fragment>
-          ))}
+      const Squirrel = ({ furColor, expression, hasAcorn }) => (
+        <svg width="220" height="240" viewBox="0 0 220 240" aria-hidden="true">
+          <defs>
+            <radialGradient id={`fur-${furColor}`}>
+              <stop offset="0%" stopColor={getSquirrelColor(furColor)} stopOpacity="1" />
+              <stop offset="70%" stopColor={getSquirrelColor(furColor)} stopOpacity="0.9" />
+              <stop offset="100%" stopColor={getSquirrelColor(furColor)} stopOpacity="0.7" />
+            </radialGradient>
+            <radialGradient id="belly">
+              <stop offset="0%" stopColor="#FFF5EE" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="#F5DEB3" stopOpacity="0.8" />
+            </radialGradient>
+          </defs>
+          <path d="M 70 130 Q 30 115 33 75 Q 35 45 50 25 Q 65 8 85 5 Q 100 3 113 12 Q 120 18 118 30" fill={`url(#fur-${furColor})`} stroke={getSquirrelColor(furColor)} strokeWidth="1" opacity="0.85" />
+          <path d="M 75 125 Q 45 110 43 80 Q 43 55 55 35 Q 67 18 83 13 Q 95 10 105 18" fill={getSquirrelColor(furColor)} opacity="0.6" />
+          <path d="M 50 70 Q 60 65 70 70" stroke="#fff" strokeWidth="1" opacity="0.3" fill="none" />
+          <path d="M 55 50 Q 65 48 75 52" stroke="#fff" strokeWidth="1" opacity="0.3" fill="none" />
+          <ellipse cx="75" cy="175" rx="18" ry="25" fill={`url(#fur-${furColor})`} />
+          <ellipse cx="75" cy="195" rx="20" ry="15" fill={getSquirrelColor(furColor)} />
+          <ellipse cx="110" cy="135" rx="42" ry="52" fill={`url(#fur-${furColor})`} />
+          <ellipse cx="110" cy="140" rx="28" ry="38" fill="url(#belly)" />
+          <ellipse cx="135" cy="175" rx="17" ry="24" fill={`url(#fur-${furColor})`} />
+          <ellipse cx="135" cy="194" rx="19" ry="14" fill={getSquirrelColor(furColor)} />
+          <circle cx="110" cy="85" r="36" fill={`url(#fur-${furColor})`} />
+          <ellipse cx="85" cy="95" rx="18" ry="15" fill="#FFF5EE" opacity="0.7" />
+          <ellipse cx="135" cy="95" rx="18" ry="15" fill="#FFF5EE" opacity="0.7" />
+          <ellipse cx="85" cy="55" rx="12" ry="20" fill={getSquirrelColor(furColor)} />
+          <ellipse cx="135" cy="55" rx="12" ry="20" fill={getSquirrelColor(furColor)} />
+          <ellipse cx="85" cy="60" rx="7" ry="12" fill="#FFE4E1" />
+          <ellipse cx="135" cy="60" rx="7" ry="12" fill="#FFE4E1" />
+          <ellipse cx="85" cy="62" rx="4" ry="8" fill="#FFB6C1" opacity="0.6" />
+          <ellipse cx="135" cy="62" rx="4" ry="8" fill="#FFB6C1" opacity="0.6" />
+          <path d={`M 90 ${68 + getExpression(expression).eyebrowAngle} Q 95 ${65 + getExpression(expression).eyebrowAngle} 100 ${68 + getExpression(expression).eyebrowAngle}`} stroke="#000" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          <path d={`M 120 ${68 + getExpression(expression).eyebrowAngle} Q 125 ${65 + getExpression(expression).eyebrowAngle} 130 ${68 + getExpression(expression).eyebrowAngle}`} stroke="#000" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          <ellipse cx="95" cy={getExpression(expression).eyeY} rx={getExpression(expression).eyeSize} ry={getExpression(expression).eyeSize + 1} fill="#000" />
+          <ellipse cx="125" cy={getExpression(expression).eyeY} rx={getExpression(expression).eyeSize} ry={getExpression(expression).eyeSize + 1} fill="#000" />
+          <circle cx="97" cy="75" r="2.5" fill="#FFF" />
+          <circle cx="127" cy="75" r="2.5" fill="#FFF" />
+          <circle cx="93" cy="80" r="1.5" fill="#FFF" opacity="0.7" />
+          <circle cx="123" cy="80" r="1.5" fill="#FFF" opacity="0.7" />
+          <ellipse cx="110" cy="96" rx="4" ry="3.5" fill="#000" />
+          <line x1="70" y1="92" x2="50" y2="88" stroke="#000" strokeWidth="1" opacity="0.6" />
+          <line x1="70" y1="96" x2="48" y2="96" stroke="#000" strokeWidth="1" opacity="0.6" />
+          <line x1="70" y1="100" x2="50" y2="104" stroke="#000" strokeWidth="1" opacity="0.6" />
+          <line x1="150" y1="92" x2="170" y2="88" stroke="#000" strokeWidth="1" opacity="0.6" />
+          <line x1="150" y1="96" x2="172" y2="96" stroke="#000" strokeWidth="1" opacity="0.6" />
+          <line x1="150" y1="100" x2="170" y2="104" stroke="#000" strokeWidth="1" opacity="0.6" />
+          <path d={`M 110 96 Q 105 ${100 + getExpression(expression).mouthCurve} 105 ${103 + getExpression(expression).mouthCurve}`} stroke="#000" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+          <path d={`M 110 96 Q 115 ${100 + getExpression(expression).mouthCurve} 115 ${103 + getExpression(expression).mouthCurve}`} stroke="#000" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+          <ellipse cx="88" cy="145" rx="12" ry="15" fill={getSquirrelColor(furColor)} />
+          <ellipse cx="132" cy="145" rx="12" ry="15" fill={getSquirrelColor(furColor)} />
+          <ellipse cx="85" cy="155" rx="3" ry="5" fill={getSquirrelColor(furColor)} opacity="0.8" />
+          <ellipse cx="90" cy="156" rx="3" ry="5" fill={getSquirrelColor(furColor)} opacity="0.8" />
+          <ellipse cx="130" cy="156" rx="3" ry="5" fill={getSquirrelColor(furColor)} opacity="0.8" />
+          <ellipse cx="135" cy="155" rx="3" ry="5" fill={getSquirrelColor(furColor)} opacity="0.8" />
+          {hasAcorn && (
+            <>
+              <ellipse cx="110" cy="135" rx="10" ry="14" fill="#8B4513" />
+              <ellipse cx="110" cy="135" rx="8" ry="12" fill="#A0522D" opacity="0.8" />
+              <ellipse cx="107" cy="132" rx="3" ry="5" fill="#C4915B" opacity="0.6" />
+              <ellipse cx="110" cy="123" rx="11" ry="7" fill="#654321" />
+              <path d="M 103 123 Q 105 121 107 123" stroke="#4a2f1a" strokeWidth="1" fill="none" opacity="0.8" />
+              <path d="M 107 123 Q 109 121 111 123" stroke="#4a2f1a" strokeWidth="1" fill="none" opacity="0.8" />
+              <path d="M 111 123 Q 113 121 115 123" stroke="#4a2f1a" strokeWidth="1" fill="none" opacity="0.8" />
+              <path d="M 105 125 Q 107 123 109 125" stroke="#4a2f1a" strokeWidth="0.8" fill="none" opacity="0.7" />
+              <path d="M 111 125 Q 113 123 115 125" stroke="#4a2f1a" strokeWidth="0.8" fill="none" opacity="0.7" />
+              <ellipse cx="110" cy="127" rx="11" ry="2" fill="#4a2f1a" opacity="0.5" />
+              <rect x="109" y="115" width="2" height="8" fill="#654321" rx="1" />
+              <rect x="108.5" y="115" width="3" height="3" fill="#7a5230" rx="1.5" />
+              <rect x="110.5" y="116" width="0.5" height="6" fill="#4a2f1a" opacity="0.4" />
+            </>
+          )}
+        </svg>
+      );
+
+      const OverlayPanel = () => (
+        <div
+          className="decorative"
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'absolute', top: 30, left: '50%', transform: 'translateX(-50%)',
+            maxWidth: 640, background: 'var(--panel-bg)', padding: showingStory ? (bigText? '30px 40px':'30px 35px') : (bigText? '24px 32px':'25px 30px'),
+            borderRadius: 'var(--radius-xl)', border: '4px solid var(--panel-border)', boxShadow: 'var(--shadow-1)',
+            transition: 'all .5s ease', animation: 'fadeIn .4s ease-out', textAlign: 'center'
+          }}
+        >
+          {showingStory ? (
+            <>
+              <div style={{ fontSize: bigText? 20:16, fontWeight:'bold', color: highContrast? '#3b2d1f':'#8B6914', marginBottom: 12, fontFamily:'Georgia, serif', letterSpacing: .5, display:'flex', alignItems:'center', justifyContent:'center', gap: 10 }}>
+                <span style={{ fontSize: bigText? 22:20, color: 'var(--accent)' }}>✦</span>
+                {currentStory.title}
+                <span style={{ fontSize: bigText? 22:20, color: 'var(--accent)' }}>✦</span>
+              </div>
+              <div style={{ fontSize: bigText? 19:17, lineHeight: 1.8, color: '#4A3728', fontFamily: 'Georgia, serif' }}>
+                {currentStory.text}
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: bigText? 22:20, fontWeight: 'bold', color: '#8B6914', fontFamily: 'Georgia, serif' }}>
+              Give me an acorn for a story! (Press <kbd>Space</kbd>)
+            </div>
+          )}
+        </div>
+      );
+
+      return (
+        <div
+          style={{ width: '100%', height: '100vh', background: getSky(), display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', transition: 'background .8s ease' }}
+          data-contrast={highContrast}
+        >
+          {/* Background layers */}
+          <Buildings />
+          {/* Sun / Moon */}
+          {!isNight ? (
+            <div className="decorative" style={{ position:'absolute', top:50, right:80, width:80, height:80, borderRadius:'50%', background:'radial-gradient(circle, #FFD700 0%, #FFA500 100%)', boxShadow:'0 0 40px rgba(255,215,0,.6)' }} />
+          ) : (
+            <div className="decorative" style={{ position:'absolute', top:50, right:80, width:70, height:70, borderRadius:'50%', background:'#F0F0F0', boxShadow:'0 0 30px rgba(240,240,240,.5)' }} />
+          )}
+          {/* Ground */}
+          <div className="decorative" style={{ position:'absolute', bottom:0, width:'100%', height:'30%', background: isNight? 'var(--ground-night)' : 'var(--ground-day)' }} />
+
+          {/* Minimal trees & clouds kept from v1 are omitted here for brevity; visuals remain decorative */}
+
+          {/* Overlay speech/story panel */}
+          <OverlayPanel />
+
+          {/* Squirrel actor */}
+          <div
+            role="button" aria-label="Squirrel – click or press Space to feed an acorn"
+            tabIndex={0}
+            onKeyDown={(e)=>{ if(e.key===' ' && !showingStory && acornCount>0){ e.preventDefault(); feedSquirrel(); } }}
+            style={{ position:'absolute', bottom:'25%', left:'50%', transform:'translateX(-50%)', cursor:'pointer', zIndex:20, animation:'fadeIn .6s ease-out' }}
+            onClick={() => { if (!showingStory && acornCount > 0) feedSquirrel(); }}
+          >
+            <Squirrel furColor={currentStory.furColor} expression={showingStory? currentStory.expression : 'waiting'} hasAcorn={showingStory} />
+          </div>
+
+          {/* HUD – always on top */}
+          <div style={{ position:'absolute', inset:0, zIndex:9999, pointerEvents:'none' }}>
+            {/* Feed Button */}
+            {acornCount>0 && !showingStory && (
+              <button className="btn" aria-label="Feed squirrel"
+                onClick={feedSquirrel}
+                style={{ position:'absolute', top:'55%', left:'70%', transform:'translate(-50%,-50%)', background:'linear-gradient(145deg, var(--hud-brown-1), var(--hud-brown-2))', border:'4px solid var(--hud-brown-border)', borderRadius:'50px', padding: reducedMotion? '16px 32px':'20px 40px', fontSize: bigText? 22:24, fontWeight:'bold', color:'#fff', cursor:'pointer', boxShadow:'var(--shadow-2)', transition:'all .25s ease', fontFamily:'Georgia, serif', animation: reducedMotion? 'none':'bounce 1s infinite', pointerEvents:'auto' }}
+                onMouseEnter={(e)=> e.currentTarget.style.transform='translate(-50%,-50%) scale(1.06)'}
+                onMouseLeave={(e)=> e.currentTarget.style.transform='translate(-50%,-50%)'}
+              >
+                🌰 <span class="hud-label">Feed Squirrel</span> 🌰
+              </button>
+            )}
+
+            {/* Next Button */}
+            {showingStory && (
+              <button className="btn hud-card" aria-label="Next squirrel story"
+                onClick={moveToNextSquirrel}
+                style={{ position:'absolute', bottom:120, left:'50%', transform:'translateX(-50%)', background:'linear-gradient(145deg, var(--hud-brown-1), var(--hud-brown-2))', border:'3px solid var(--hud-brown-border)', borderRadius:'30px', padding: '12px 22px', fontSize: bigText? 16:15, fontWeight:'bold', color:'#fff', cursor:'pointer', transition:'all .25s ease', pointerEvents:'auto' }}
+                onMouseEnter={(e)=>{ e.currentTarget.style.transform='translateX(-50%) scale(1.04)'; e.currentTarget.style.boxShadow='0 6px 25px rgba(0,0,0,0.35)'; }}
+                onMouseLeave={(e)=>{ e.currentTarget.style.transform='translateX(-50%)'; e.currentTarget.style.boxShadow='var(--shadow-soft)'; }}
+              >
+                New Squirrel Storyteller → (N)
+              </button>
+            )}
+
+            {/* Counters */}
+            <div className="hud-card" aria-live="polite" style={{ position:'absolute', bottom:30, left:30, background:'linear-gradient(145deg, var(--hud-brown-1), var(--hud-brown-2))', padding:'14px 20px', borderRadius:'30px', fontSize: bigText? 18:18, fontWeight:'bold', color:'#fff', boxShadow:'var(--shadow-soft)', border:'3px solid var(--hud-brown-border)', display:'flex', alignItems:'center', gap:10, pointerEvents:'auto' }}>
+              🌰 {acornCount} <span class="hud-label">Acorns</span>
+            </div>
+            <div className="hud-card" style={{ position:'absolute', top:30, right:30, background:'linear-gradient(145deg, rgba(255,255,255,.9), rgba(245,245,245,.85))', padding:'10px 16px', borderRadius:'25px', fontSize: bigText? 15:14, fontWeight:'bold', color:'#5a4a3a', boxShadow:'var(--shadow-soft)', border:'2px solid var(--panel-border)', pointerEvents:'auto' }}>
+              ⏱️ Next acorn: {formatTime(timeLeft)}
+            </div>
+            <div className="hud-card" style={{ position:'absolute', bottom:30, right:30, background:'linear-gradient(145deg, rgba(255,255,255,.9), rgba(245,245,245,.85))', padding:'10px 16px', borderRadius:'25px', fontSize: bigText? 15:14, fontWeight:'bold', color:'#5a4a3a', boxShadow:'var(--shadow-soft)', border:'2px solid var(--panel-border)', pointerEvents:'auto' }}>
+              📖 {storiesHeard} / {stories.length}
+            </div>
+
+            {/* Settings (gear) */}
+            <details style={{ position:'absolute', top:30, left:30, pointerEvents:'auto' }}>
+              <summary className="btn hud-card" aria-label="Open settings"
+                style={{ listStyle:'none', cursor:'pointer', background:'linear-gradient(145deg, rgba(255,255,255,.9), rgba(245,245,245,.85))', padding:'10px 14px', borderRadius:'999px', display:'flex', alignItems:'center', gap:8, border:'2px solid var(--panel-border)' }}>
+                <span aria-hidden>⚙️</span><span class="hud-label" style={{ fontWeight:600, color:'#5a4a3a' }}>Settings</span>
+              </summary>
+              <div className="hud-card" style={{ marginTop:10, background:'var(--panel-bg)', borderRadius:'16px', padding:'12px 14px', minWidth:240 }}>
+                <label style={{ display:'flex', alignItems:'center', gap:10, margin:'6px 0' }}>
+                  <input type="checkbox" onChange={(e)=> setHighContrast(e.target.checked)} checked={highContrast} />
+                  <span>High contrast UI</span>
+                </label>
+                <label style={{ display:'flex', alignItems:'center', gap:10, margin:'6px 0' }}>
+                  <input type="checkbox" onChange={(e)=> setBigText(e.target.checked)} checked={bigText} />
+                  <span>Bigger text</span>
+                </label>
+                <label style={{ display:'flex', alignItems:'center', gap:10, margin:'6px 0' }}>
+                  <input type="checkbox" onChange={(e)=> setReducedMotion(e.target.checked)} checked={reducedMotion} />
+                  <span>Reduce motion</span>
+                </label>
+                <div style={{ fontSize:12, opacity:.75, marginTop:6 }}>Shortcuts: Space = Feed, N = Next</div>
+              </div>
+            </details>
+          </div>
         </div>
       );
     }
-    return buildings;
-  };
 
-  const renderSquirrel = (furColor, expression, hasAcorn) => (
-    <svg width="220" height="240" viewBox="0 0 220 240">
-      <defs>
-        <radialGradient id={`furGradient-${furColor}`}>
-          <stop offset="0%" stopColor={getSquirrelColor(furColor)} stopOpacity="1" />
-          <stop offset="70%" stopColor={getSquirrelColor(furColor)} stopOpacity="0.9" />
-          <stop offset="100%" stopColor={getSquirrelColor(furColor)} stopOpacity="0.7" />
-        </radialGradient>
-        <radialGradient id="bellyGradient">
-          <stop offset="0%" stopColor="#FFF5EE" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="#F5DEB3" stopOpacity="0.8" />
-        </radialGradient>
-      </defs>
-
-      {/* Tail */}
-      <path d="M 70 130 Q 30 115 33 75 Q 35 45 50 25 Q 65 8 85 5 Q 100 3 113 12 Q 120 18 118 30"
-        fill={`url(#furGradient-${furColor})`} stroke={getSquirrelColor(furColor)} strokeWidth="1" opacity="0.85" />
-      <path d="M 75 125 Q 45 110 43 80 Q 43 55 55 35 Q 67 18 83 13 Q 95 10 105 18"
-        fill={getSquirrelColor(furColor)} opacity="0.6" />
-      <path d="M 50 70 Q 60 65 70 70" stroke="#fff" strokeWidth="1" opacity="0.3" fill="none" />
-      <path d="M 55 50 Q 65 48 75 52" stroke="#fff" strokeWidth="1" opacity="0.3" fill="none" />
-
-      <ellipse cx="75" cy="175" rx="18" ry="25" fill={`url(#furGradient-${furColor})`} />
-      <ellipse cx="75" cy="195" rx="20" ry="15" fill={getSquirrelColor(furColor)} />
-      <ellipse cx="110" cy="135" rx="42" ry="52" fill={`url(#furGradient-${furColor})`} />
-      <ellipse cx="110" cy="140" rx="28" ry="38" fill="url(#bellyGradient)" />
-      <ellipse cx="135" cy="175" rx="17" ry="24" fill={`url(#furGradient-${furColor})`} />
-      <ellipse cx="135" cy="194" rx="19" ry="14" fill={getSquirrelColor(furColor)} />
-      <circle cx="110" cy="85" r="36" fill={`url(#furGradient-${furColor})`} />
-      <ellipse cx="85" cy="95" rx="18" ry="15" fill="#FFF5EE" opacity="0.7" />
-      <ellipse cx="135" cy="95" rx="18" ry="15" fill="#FFF5EE" opacity="0.7" />
-      <ellipse cx="85" cy="55" rx="12" ry="20" fill={getSquirrelColor(furColor)} />
-      <ellipse cx="135" cy="55" rx="12" ry="20" fill={getSquirrelColor(furColor)} />
-      <ellipse cx="85" cy="60" rx="7" ry="12" fill="#FFE4E1" />
-      <ellipse cx="135" cy="60" rx="7" ry="12" fill="#FFE4E1" />
-      <ellipse cx="85" cy="62" rx="4" ry="8" fill="#FFB6C1" opacity="0.6" />
-      <ellipse cx="135" cy="62" rx="4" ry="8" fill="#FFB6C1" opacity="0.6" />
-
-      <path d={`M 90 ${68 + getExpression(expression).eyebrowAngle} Q 95 ${65 + getExpression(expression).eyebrowAngle} 100 ${68 + getExpression(expression).eyebrowAngle}`}
-        stroke="#000" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-      <path d={`M 120 ${68 + getExpression(expression).eyebrowAngle} Q 125 ${65 + getExpression(expression).eyebrowAngle} 130 ${68 + getExpression(expression).eyebrowAngle}`}
-        stroke="#000" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-
-      <ellipse cx="95" cy={getExpression(expression).eyeY} rx={getExpression(expression).eyeSize} ry={getExpression(expression).eyeSize + 1} fill="#000" />
-      <ellipse cx="125" cy={getExpression(expression).eyeY} rx={getExpression(expression).eyeSize} ry={getExpression(expression).eyeSize + 1} fill="#000" />
-      <circle cx="97" cy="75" r="2.5" fill="#FFF" />
-      <circle cx="127" cy="75" r="2.5" fill="#FFF" />
-      <circle cx="93" cy="80" r="1.5" fill="#FFF" opacity="0.7" />
-      <circle cx="123" cy="80" r="1.5" fill="#FFF" opacity="0.7" />
-      <ellipse cx="110" cy="96" rx="4" ry="3.5" fill="#000" />
-
-      <line x1="70" y1="92" x2="50" y2="88" stroke="#000" strokeWidth="1" opacity="0.6" />
-      <line x1="70" y1="96" x2="48" y2="96" stroke="#000" strokeWidth="1" opacity="0.6" />
-      <line x1="70" y1="100" x2="50" y2="104" stroke="#000" strokeWidth="1" opacity="0.6" />
-      <line x1="150" y1="92" x2="170" y2="88" stroke="#000" strokeWidth="1" opacity="0.6" />
-      <line x1="150" y1="96" x2="172" y2="96" stroke="#000" strokeWidth="1" opacity="0.6" />
-      <line x1="150" y1="100" x2="170" y2="104" stroke="#000" strokeWidth="1" opacity="0.6" />
-
-      <path d={`M 110 96 Q 105 ${100 + getExpression(expression).mouthCurve} 105 ${103 + getExpression(expression).mouthCurve}`}
-        stroke="#000" strokeWidth="1.8" fill="none" strokeLinecap="round" />
-      <path d={`M 110 96 Q 115 ${100 + getExpression(expression).mouthCurve} 115 ${103 + getExpression(expression).mouthCurve}`}
-        stroke="#000" strokeWidth="1.8" fill="none" strokeLinecap="round" />
-
-      <ellipse cx="88" cy="145" rx="12" ry="15" fill={getSquirrelColor(furColor)} />
-      <ellipse cx="132" cy="145" rx="12" ry="15" fill={getSquirrelColor(furColor)} />
-      <ellipse cx="85" cy="155" rx="3" ry="5" fill={getSquirrelColor(furColor)} opacity="0.8" />
-      <ellipse cx="90" cy="156" rx="3" ry="5" fill={getSquirrelColor(furColor)} opacity="0.8" />
-      <ellipse cx="130" cy="156" rx="3" ry="5" fill={getSquirrelColor(furColor)} opacity="0.8" />
-      <ellipse cx="135" cy="155" rx="3" ry="5" fill={getSquirrelColor(furColor)} opacity="0.8" />
-
-      {hasAcorn && (
-        <>
-          <ellipse cx="110" cy="135" rx="10" ry="14" fill="#8B4513" />
-          <ellipse cx="110" cy="135" rx="8" ry="12" fill="#A0522D" opacity="0.8" />
-          <ellipse cx="107" cy="132" rx="3" ry="5" fill="#C4915B" opacity="0.6" />
-          <ellipse cx="110" cy="123" rx="11" ry="7" fill="#654321" />
-          <path d="M 103 123 Q 105 121 107 123" stroke="#4a2f1a" strokeWidth="1" fill="none" opacity="0.8" />
-          <path d="M 107 123 Q 109 121 111 123" stroke="#4a2f1a" strokeWidth="1" fill="none" opacity="0.8" />
-          <path d="M 111 123 Q 113 121 115 123" stroke="#4a2f1a" strokeWidth="1" fill="none" opacity="0.8" />
-          <path d="M 105 125 Q 107 123 109 125" stroke="#4a2f1a" strokeWidth="0.8" fill="none" opacity="0.7" />
-          <path d="M 111 125 Q 113 123 115 125" stroke="#4a2f1a" strokeWidth="0.8" fill="none" opacity="0.7" />
-          <ellipse cx="110" cy="127" rx="11" ry="2" fill="#4a2f1a" opacity="0.5" />
-          <rect x="109" y="115" width="2" height="8" fill="#654321" rx="1" />
-          <rect x="108.5" y="115" width="3" height="3" fill="#7a5230" rx="1.5" />
-          <rect x="110.5" y="116" width="0.5" height="6" fill="#4a2f1a" opacity="0.4" />
-        </>
-      )}
-
-      <path d="M 80 120 Q 85 118 90 120" stroke="#fff" strokeWidth="1" opacity="0.2" fill="none" />
-      <path d="M 130 120 Q 135 118 140 120" stroke="#fff" strokeWidth="1" opacity="0.2" fill="none" />
-    </svg>
-  );
-
-  return (
-    <div
-      style={{
-        width: '100%',
-        height: '100vh',
-        background: getSkyColor(),
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-        overflow: 'hidden',
-        transition: 'background 0.8s ease'
-      }}
-    >
-      {/* City Skyline (decorative) */}
-      <div className="decorative" style={{
-        position: 'absolute',
-        bottom: '30%',
-        left: 0,
-        right: 0,
-        height: '25%',
-        display: 'flex',
-        alignItems: 'flex-end',
-        justifyContent: 'space-between',
-        gap: '2px',
-        opacity: isNight ? '0.55' : '0.35',
-        transition: 'opacity 0.8s ease',
-        width: '100%'
-      }}>
-        {generateBuildings()}
-      </div>
-
-      {/* Sun or Moon (decorative) */}
-      {!isNight ? (
-        <div className="decorative" style={{
-          position: 'absolute',
-          top: '50px',
-          right: '80px',
-          width: '80px',
-          height: '80px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, #FFD700 0%, #FFA500 100%)',
-          boxShadow: '0 0 40px rgba(255, 215, 0, 0.6)',
-          transition: 'all 0.8s ease'
-        }} />
-      ) : (
-        <div className="decorative" style={{
-          position: 'absolute',
-          top: '50px',
-          right: '80px',
-          width: '70px',
-          height: '70px',
-          borderRadius: '50%',
-          background: '#F0F0F0',
-          boxShadow: '0 0 30px rgba(240, 240, 240, 0.5)',
-          transition: 'all 0.8s ease'
-        }} />
-      )}
-
-      {/* Ground (decorative) */}
-      <div className="decorative" style={{
-        position: 'absolute',
-        bottom: 0,
-        width: '100%',
-        height: '30%',
-        background: isNight ? '#2d5016' : '#90EE90',
-        transition: 'background 0.8s ease'
-      }} />
-
-      {/* Trees - Left (decorative) */}
-      <svg className="decorative" style={{
-        position: 'absolute',
-        left: '-20px',
-        bottom: '30%',
-        width: '500px',
-        height: '500px',
-        transition: 'opacity 0.8s ease'
-      }}>
-        <ellipse cx="50" cy="200" rx="55" ry="75" fill={isNight ? '#8B4513' : '#FF8C00'} opacity="0.6" />
-        <ellipse cx="65" cy="195" rx="40" ry="55" fill={isNight ? '#A0522D' : '#FFA500'} opacity="0.7" />
-        <circle cx="40" cy="190" r="18" fill={isNight ? '#D2691E' : '#FFB347'} opacity="0.8" />
-        <circle cx="55" cy="175" r="22" fill={isNight ? '#CD853F' : '#FF8C00'} opacity="0.7" />
-        <circle cx="60" cy="210" r="16" fill={isNight ? '#8B4513' : '#FF6347'} opacity="0.7" />
-        <rect x="45" y="260" width="20" height="240" fill={isNight ? '#3d2817' : '#654321'} />
-        <ellipse cx="150" cy="150" rx="80" ry="100" fill={isNight ? '#8B0000' : '#DC143C'} opacity="0.6" />
-        <ellipse cx="140" cy="140" rx="70" ry="85" fill={isNight ? '#A52A2A' : '#FF6347'} opacity="0.7" />
-        <circle cx="120" cy="130" r="24" fill={isNight ? '#B22222' : '#FF4500'} opacity="0.75" />
-        <circle cx="140" cy="120" r="20" fill={isNight ? '#8B0000' : '#DC143C'} opacity="0.8" />
-        <circle cx="165" cy="135" r="26" fill={isNight ? '#A52A2A' : '#CD5C5C'} opacity="0.7" />
-        <circle cx="125" cy="165" r="22" fill={isNight ? '#8B0000' : '#FF6347'} opacity="0.75" />
-        <rect x="135" y="220" width="30" height="280" fill={isNight ? '#5d2f0f' : '#8B4513'} />
-        <ellipse cx="280" cy="170" rx="70" ry="90" fill={isNight ? '#B8860B' : '#FFD700'} opacity="0.6" />
-        <ellipse cx="270" cy="160" rx="60" ry="75" fill={isNight ? '#DAA520' : '#FFA500'} opacity="0.7" />
-        <circle cx="260" cy="150" r="25" fill={isNight ? '#FFD700' : '#FFFF00'} opacity="0.8" />
-        <circle cx="285" cy="155" r="22" fill={isNight ? '#DAA520' : '#FFD700'} opacity="0.75" />
-        <circle cx="270" cy="180" r="20" fill={isNight ? '#B8860B' : '#FFA500'} opacity="0.7" />
-        <rect x="265" y="240" width="25" height="260" fill={isNight ? '#3d2817' : '#654321'} />
-        <ellipse cx="390" cy="185" rx="65" ry="85" fill={isNight ? '#A0522D' : '#FF8C00'} opacity="0.6" />
-        <circle cx="370" cy="170" r="24" fill={isNight ? '#D2691E' : '#FFA500'} opacity="0.75" />
-        <circle cx="395" cy="175" r="22" fill={isNight ? '#8B0000' : '#FF6347'} opacity="0.7" />
-        <circle cx="405" cy="190" r="20" fill={isNight ? '#DAA520' : '#FFD700'} opacity="0.75" />
-        <circle cx="375" cy="195" r="18" fill={isNight ? '#A52A2A' : '#FF4500'} opacity="0.7" />
-        <rect x="380" y="250" width="22" height="250" fill={isNight ? '#5d2f0f' : '#8B4513'} />
-      </svg>
-
-      {/* Trees - Right (decorative) */}
-      <svg className="decorative" style={{
-        position: 'absolute',
-        right: '-20px',
-        bottom: '30%',
-        width: '550px',
-        height: '550px',
-        transition: 'opacity 0.8s ease'
-      }}>
-        <ellipse cx="100" cy="160" rx="90" ry="110" fill={isNight ? '#A0522D' : '#FF8C00'} opacity="0.5" />
-        <ellipse cx="85" cy="155" rx="75" ry="90" fill={isNight ? '#D2691E' : '#FFA500'} opacity="0.6" />
-        <circle cx="90" cy="150" r="28" fill={isNight ? '#CD853F' : '#FFB347'} opacity="0.7" />
-        <circle cx="70" cy="165" r="26" fill={isNight ? '#8B0000' : '#FF6347'} opacity="0.75" />
-        <circle cx="110" cy="170" r="24" fill={isNight ? '#A52A2A' : '#FF4500'} opacity="0.7" />
-        <rect x="90" y="240" width="25" height="310" fill={isNight ? '#3d2817' : '#654321'} />
-        <ellipse cx="230" cy="200" rx="70" ry="90" fill={isNight ? '#DAA520' : '#FFD700'} opacity="0.6" />
-        <ellipse cx="220" cy="190" rx="60" ry="75" fill={isNight ? '#FFD700' : '#FFFF00'} opacity="0.7" />
-        <circle cx="210" cy="180" r="26" fill={isNight ? '#F0E68C' : '#FFFACD'} opacity="0.8" />
-        <circle cx="235" cy="185" r="24" fill={isNight ? '#DAA520' : '#FFD700'} opacity="0.75" />
-        <circle cx="220" cy="210" r="22" fill={isNight ? '#B8860B' : '#FFA500'} opacity="0.7" />
-        <rect x="220" y="260" width="22" height="290" fill={isNight ? '#5d2f0f' : '#8B4513'} />
-        <ellipse cx="350" cy="175" rx="75" ry="95" fill={isNight ? '#8B0000' : '#DC143C'} opacity="0.5" />
-        <ellipse cx="340" cy="165" rx="65" ry="80" fill={isNight ? '#A52A2A' : '#FF6347'} opacity="0.6" />
-        <circle cx="330" cy="155" r="27" fill={isNight ? '#B22222' : '#FF4500'} opacity="0.75" />
-        <circle cx="355" cy="160" r="24" fill={isNight ? '#8B0000' : '#CD5C5C'} opacity="0.8" />
-        <circle cx="340" cy="185" r="23" fill={isNight ? '#A52A2A' : '#DC143C'} opacity="0.7" />
-        <rect x="340" y="245" width="24" height="305" fill={isNight ? '#3d2817' : '#654321'} />
-        <ellipse cx="460" cy="190" rx="60" ry="80" fill={isNight ? '#A0522D' : '#FF8C00'} opacity="0.6" />
-        <circle cx="440" cy="175" r="23" fill={isNight ? '#DAA520' : '#FFD700'} opacity="0.75" />
-        <circle cx="465" cy="180" r="20" fill={isNight ? '#8B0000' : '#FF6347'} opacity="0.7" />
-        <circle cx="475" cy="195" r="19" fill={isNight ? '#CD853F' : '#FFA500'} opacity="0.75" />
-        <rect x="450" y="255" width="20" height="295" fill={isNight ? '#5d2f0f' : '#8B4513'} />
-      </svg>
-
-      {/* Grass (decorative) */}
-      <div className="decorative" style={{ position: 'absolute', bottom: '28%', left: '5%', width: '90%', display: 'flex', justifyContent: 'space-around' }}>
-        {[...Array(25)].map((_, i) => (
-          <div key={i} style={{
-            width: '3px',
-            height: `${15 + Math.random() * 15}px`,
-            background: isNight ? '#2d4a24' : '#4d7a42',
-            borderRadius: '2px',
-            opacity: 0.7,
-            transform: `rotate(${Math.random() * 20 - 10}deg)`
-          }} />
-        ))}
-      </div>
-
-      {/* Fallen leaves (decorative) */}
-      <div className="decorative" style={{ position: 'absolute', bottom: '28%', left: 0, width: '100%', height: '4%', overflow: 'hidden' }}>
-        {[...Array(40)].map((_, i) => {
-          const colors = ['#FF6347', '#FF8C00', '#FFD700', '#DC143C', '#FFA500', '#CD853F'];
-          const leafColor = colors[Math.floor(Math.random() * colors.length)];
-          return (
-            <div key={i} style={{
-              position: 'absolute',
-              left: `${Math.random() * 100}%`,
-              bottom: `${Math.random() * 80}%`,
-              width: '10px',
-              height: '10px',
-              background: leafColor,
-              borderRadius: '50% 0 50% 0',
-              transform: `rotate(${Math.random() * 360}deg)`,
-              opacity: isNight ? 0.6 : 0.8
-            }} />
-          );
-        })}
-      </div>
-
-      {/* Clouds (decorative) */}
-      <div className="decorative" style={{
-        position: 'absolute',
-        top: '10%',
-        left: 0,
-        width: '100%',
-        height: '30%',
-        overflow: 'hidden'
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: '20px',
-          left: '-100px',
-          animation: 'cloudFloat1 45s linear infinite',
-          opacity: isNight ? 0.3 : 0.7
-        }}>
-          <svg width="120" height="50" viewBox="0 0 120 50">
-            <ellipse cx="30" cy="30" rx="25" ry="20" fill={isNight ? '#D3D3D3' : '#FFFFFF'} />
-            <ellipse cx="55" cy="25" rx="30" ry="22" fill={isNight ? '#D3D3D3' : '#FFFFFF'} />
-            <ellipse cx="80" cy="30" rx="28" ry="20" fill={isNight ? '#D3D3D3' : '#FFFFFF'} />
-          </svg>
-        </div>
-        <div style={{
-          position: 'absolute',
-          top: '80px',
-          left: '-150px',
-          animation: 'cloudFloat2 60s linear infinite',
-          opacity: isNight ? 0.25 : 0.6
-        }}>
-          <svg width="100" height="45" viewBox="0 0 100 45">
-            <ellipse cx="25" cy="25" rx="20" ry="18" fill={isNight ? '#D3D3D3' : '#FFFFFF'} />
-            <ellipse cx="50" cy="22" rx="25" ry="20" fill={isNight ? '#D3D3D3' : '#FFFFFF'} />
-            <ellipse cx="70" cy="26" rx="22" ry="18" fill={isNight ? '#D3D3D3' : '#FFFFFF'} />
-          </svg>
-        </div>
-        <div style={{
-          position: 'absolute',
-          top: '10px',
-          left: '-200px',
-          animation: 'cloudFloat3 70s linear infinite',
-          opacity: isNight ? 0.2 : 0.5
-        }}>
-          <svg width="140" height="55" viewBox="0 0 140 55">
-            <ellipse cx="35" cy="32" rx="28" ry="22" fill={isNight ? '#D3D3D3' : '#FFFFFF'} />
-            <ellipse cx="65" cy="28" rx="32" ry="24" fill={isNight ? '#D3D3D3' : '#FFFFFF'} />
-            <ellipse cx="95" cy="32" rx="30" ry="22" fill={isNight ? '#D3D3D3' : '#FFFFFF'} />
-          </svg>
-        </div>
-        <div style={{
-          position: 'absolute',
-          top: '120px',
-          left: '-80px',
-          animation: 'cloudFloat4 50s linear infinite',
-          opacity: isNight ? 0.3 : 0.65
-        }}>
-          <svg width="80" height="40" viewBox="0 0 80 40">
-            <ellipse cx="20" cy="22" rx="18" ry="16" fill={isNight ? '#D3D3D3' : '#FFFFFF'} />
-            <ellipse cx="40" cy="20" rx="22" ry="18" fill={isNight ? '#D3D3D3' : '#FFFFFF'} />
-            <ellipse cx="58" cy="23" rx="19" ry="16" fill={isNight ? '#D3D3D3' : '#FFFFFF'} />
-          </svg>
-        </div>
-      </div>
-
-      {/* Speech Bubble */}
-      {showingStory ? (
-        <div className="decorative" style={{
-          position: 'absolute',
-          top: '30px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          maxWidth: '600px',
-          background: 'linear-gradient(135deg, #FFF9F0 0%, #FFFAF5 100%)',
-          padding: '30px 35px',
-          borderRadius: '50px',
-          boxShadow: '0 10px 40px rgba(0,0,0,0.15), 0 3px 12px rgba(0,0,0,0.1)',
-          border: '4px solid rgba(255, 255, 255, 0.9)',
-          zIndex: 30,
-          transition: 'all 0.5s ease',
-          animation: 'fadeIn 0.5s ease-out'
-        }}>
-          <div style={{
-            fontSize: '16px',
-            fontWeight: 'bold',
-            color: '#8B6914',
-            marginBottom: '15px',
-            fontFamily: 'Georgia, serif',
-            letterSpacing: '0.5px',
-            textAlign: 'center',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '10px'
-          }}>
-            <span style={{ fontSize: '20px', color: '#D4A574' }}>✦</span>
-            {currentStory.title}
-            <span style={{ fontSize: '20px', color: '#D4A574' }}>✦</span>
-          </div>
-          <div style={{
-            fontSize: '17px',
-            lineHeight: '1.8',
-            color: '#4A3728',
-            fontFamily: 'Georgia, serif',
-            textAlign: 'center'
-          }}>
-            {currentStory.text}
-          </div>
-          <div style={{
-            position: 'absolute',
-            bottom: '-30px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 0, height: 0,
-            borderLeft: '30px solid transparent',
-            borderRight: '30px solid transparent',
-            borderTop: '30px solid #FFF9F0',
-            filter: 'drop-shadow(0 5px 8px rgba(0,0,0,0.1))'
-          }} />
-          <div style={{
-            position: 'absolute',
-            bottom: '-50px',
-            left: 'calc(50% - 20px)',
-            width: '18px', height: '18px',
-            background: '#FFF9F0',
-            borderRadius: '50%',
-            border: '3px solid rgba(255, 255, 255, 0.8)',
-            boxShadow: '0 3px 10px rgba(0,0,0,0.1)'
-          }} />
-          <div style={{
-            position: 'absolute',
-            bottom: '-65px',
-            left: 'calc(50% - 35px)',
-            width: '12px', height: '12px',
-            background: '#FFF9F0',
-            borderRadius: '50%',
-            border: '2px solid rgba(255, 255, 255, 0.8)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-          }} />
-        </div>
-      ) : (
-        <div className="decorative" style={{
-          position: 'absolute',
-          top: '30px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          maxWidth: '500px',
-          background: 'linear-gradient(135deg, #FFF9F0 0%, #FFFAF5 100%)',
-          padding: '25px 30px',
-          borderRadius: '50px',
-          boxShadow: '0 10px 40px rgba(0,0,0,0.15), 0 3px 12px rgba(0,0,0,0.1)',
-          border: '4px solid rgba(255, 255, 255, 0.9)',
-          zIndex: 30,
-          transition: 'all 0.5s ease'
-        }}>
-          <div style={{
-            fontSize: '20px',
-            fontWeight: 'bold',
-            color: '#8B6914',
-            fontFamily: 'Georgia, serif',
-            textAlign: 'center'
-          }}>
-            Give me an acorn for a story!
-          </div>
-          <div style={{
-            position: 'absolute',
-            bottom: '-30px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 0, height: 0,
-            borderLeft: '30px solid transparent',
-            borderRight: '30px solid transparent',
-            borderTop: '30px solid #FFF9F0',
-            filter: 'drop-shadow(0 5px 8px rgba(0,0,0,0.1))'
-          }} />
-        </div>
-      )}
-
-      {/* Squirrel (clickable) */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '25%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          cursor: 'pointer',
-          transition: 'all 0.5s ease',
-          zIndex: 20,
-          animation: 'fadeIn 0.8s ease-out'
-        }}
-        onClick={() => { if (!showingStory && acornCount > 0) feedSquirrel(); }}
-      >
-        {renderSquirrel(
-          currentStory.furColor,
-          showingStory ? currentStory.expression : 'waiting',
-          showingStory
-        )}
-      </div>
-
-      {/* ===================== HUD LAYER (ALWAYS ON TOP) ===================== */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          zIndex: 9999,          // NEW: top-most
-          pointerEvents: 'none'  // container lets clicks pass through
-        }}
-      >
-        {/* Feed Button */}
-        {acornCount > 0 && !showingStory && (
-          <button
-            onClick={feedSquirrel}
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '70%',
-              transform: 'translate(-50%, -50%)',
-              background: 'linear-gradient(145deg, #8B4513 0%, #A0522D 100%)',
-              border: '4px solid #654321',
-              borderRadius: '50px',
-              padding: '20px 40px',
-              fontSize: '24px',
-              fontWeight: 'bold',
-              color: 'white',
-              cursor: 'pointer',
-              boxShadow: '0 8px 30px rgba(0,0,0,0.3), inset 0 2px 5px rgba(255,255,255,0.3)',
-              transition: 'all 0.3s ease',
-              fontFamily: 'Georgia, serif',
-              animation: 'bounce 1s infinite',
-              pointerEvents: 'auto'   // button remains clickable
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.1)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1)'; }}
-          >
-            🌰 Feed Squirrel 🌰
-          </button>
-        )}
-
-        {/* Next Squirrel Button */}
-        {showingStory && (
-          <button
-            onClick={moveToNextSquirrel}
-            style={{
-              position: 'absolute',
-              bottom: '120px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: 'linear-gradient(145deg, rgba(139, 69, 19, 0.95), rgba(160, 82, 45, 0.9))',
-              border: '3px solid rgba(101, 67, 33, 0.8)',
-              borderRadius: '30px',
-              padding: '12px 25px',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              color: 'white',
-              cursor: 'pointer',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-              transition: 'all 0.3s ease',
-              fontFamily: 'Georgia, serif',
-              backdropFilter: 'blur(10px)',
-              pointerEvents: 'auto'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateX(-50%) scale(1.05)';
-              e.currentTarget.style.boxShadow = '0 6px 25px rgba(0,0,0,0.35)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateX(-50%) scale(1)';
-              e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.25)';
-            }}
-          >
-            New Squirrel Storyteller? →
-          </button>
-        )}
-
-        {/* Acorn Counter */}
-        <div style={{
-          position: 'absolute',
-          bottom: '30px',
-          left: '30px',
-          background: 'linear-gradient(145deg, rgba(139, 69, 19, 0.95), rgba(160, 82, 45, 0.9))',
-          padding: '15px 25px',
-          borderRadius: '30px',
-          fontSize: '20px',
-          fontWeight: 'bold',
-          color: 'white',
-          fontFamily: 'Georgia, serif',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-          border: '3px solid rgba(101, 67, 33, 0.8)',
-          backdropFilter: 'blur(10px)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          pointerEvents: 'auto'
-        }}>
-          🌰 {acornCount} Acorns
-        </div>
-
-        {/* Timer */}
-        <div style={{
-          position: 'absolute',
-          top: '30px',
-          right: '30px',
-          background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(245, 245, 245, 0.85))',
-          padding: '12px 20px',
-          borderRadius: '25px',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          color: '#5a4a3a',
-          fontFamily: 'Georgia, serif',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.12)',
-          border: '2px solid rgba(255, 255, 255, 0.7)',
-          backdropFilter: 'blur(10px)',
-          pointerEvents: 'auto'
-        }}>
-          ⏱️ Next acorn: {formatTime(timeLeft)}
-        </div>
-
-        {/* Stories Counter */}
-        <div style={{
-          position: 'absolute',
-          bottom: '30px',
-          right: '30px',
-          background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(245, 245, 245, 0.85))',
-          padding: '12px 20px',
-          borderRadius: '25px',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          color: '#5a4a3a',
-          fontFamily: 'Georgia, serif',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.12)',
-          border: '2px solid rgba(255, 255, 255, 0.7)',
-          backdropFilter: 'blur(10px)',
-          pointerEvents: 'auto'
-        }}>
-          📖 Stories: {storiesHeard} / {stories.length}
-        </div>
-      </div>
-      {/* =================== END HUD LAYER =================== */}
-    </div>
-  );
-};
-
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<StorytellingSquirrel />);
-</script>
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<StorytellingSquirrel />);
+  </script>
 </body>
 </html>
