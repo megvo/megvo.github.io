@@ -2,7 +2,7 @@
 
 This is a clean, minimal starter you can deploy **for free** with GitHub Pages and extend with any custom code (D3.js, p5.js, iframes, etc.).
 
-## Quick Start
+## Quick Start 
 
 1. Create a new repository on GitHub (e.g., `my-portfolio`).
 2. Download this starter and **upload all files** to your repo root (`index.html` should be at the top level).
