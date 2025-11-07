@@ -1,85 +1,383 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Feed & Learn — Fur Color Story</title>
-  <!-- Minimal no-build React setup (safe fallback). Replace this file with your actual React bundle later if you have one. -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,"Helvetica Neue",Arial}
-    .wrap{min-height:100vh;background:linear-gradient(135deg,#fff8e1,#ffd8b3);display:flex;align-items:center;justify-content:center;padding:24px}
-    .card{max-width:900px;width:100%;background:#fff;border-radius:18px;box-shadow:0 18px 50px rgba(0,0,0,.12);padding:24px}
-    h1{text-align:center;color:#8b4513;margin:6px 0 16px}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:12px}
-    .tile{border:2px solid #deb887;border-radius:14px;padding:14px;background:linear-gradient(180deg,#fff,#fff9f0)}
-    .tile h3{margin:0 0 6px 0;color:#5a3d1e}
-    .note{margin-top:16px;background:#fff3cd;border:1px solid #ffeeba;border-radius:8px;padding:10px;color:#6b4b00}
-    .cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-    .btn{border:2px solid #8b4513;background:#fff;color:#8b4513;border-radius:22px;padding:10px 16px;font-weight:600;cursor:pointer}
-    .btn:hover{background:#8b4513;color:#fff}
+    :root{
+      --ink:#1e293b;
+      --muted:#475569;
+      --bg:#fff8f0;
+      --panel:#fff;
+      --accent:#2c5f2d;
+      --accent-2:#97bc62;
+      --shadow:0 10px 30px rgba(0,0,0,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji"}
+    a{color:var(--accent);text-decoration:none}
+    .wrap{max-width:1100px;margin:auto;padding:28px;}
+
+    .hero{
+      background: linear-gradient(120deg, #fdfcfb 0%, #e2d1c3 100%);
+      border-radius:20px;padding:28px 28px 8px 28px;box-shadow:var(--shadow);
+    }
+    .hero h1{font-size:2.2rem;margin:0 0 6px 0}
+    .hero p{color:var(--muted);margin:0 0 16px 0}
+    .tagline{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 8px}
+    .pill{background:#fff;border:1px solid #e7e5e4;color:#334155;padding:6px 10px;border-radius:999px;font-weight:600;font-size:.9rem}
+
+    .grid{
+      display:grid;grid-template-columns: 340px 1fr; gap:22px;margin-top:22px;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr}
+      .panel.sticky{position:static;top:auto}
+    }
+    .panel{
+      background:var(--panel);border-radius:16px;padding:18px 18px;box-shadow:var(--shadow);
+    }
+    .panel h2{font-size:1.2rem;margin:2px 0 10px 0}
+    .panel p{color:var(--muted);line-height:1.5;margin:8px 0 0}
+    .panel .note{font-size:.9rem;color:#64748b;margin-top:8px}
+
+    .sticky{position:sticky; top:14px}
+
+    .story{
+      display:flex;flex-direction:column;gap:18px;
+    }
+    .card{background:#fff;border:1px solid #eee;border-radius:14px;padding:16px 16px;box-shadow:var(--shadow)}
+    .card h3{margin:0 0 6px 0;font-size:1.05rem}
+    .card p{margin:0;color:#475569;line-height:1.55}
+    .callout{border-left:6px solid var(--accent);background:#f0fdf4}
+    .warn{border-left:6px solid #d97706;background:#fffbeb}
+
+    .legend{
+      display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px;
+    }
+    .legend .key{display:flex;align-items:center;gap:8px;font-size:.92rem;color:#334155}
+    .dot{width:14px;height:14px;border-radius:4px;display:inline-block}
+    .dot.gray{background:#8B8680}
+    .dot.cinnamon{background:#D2691E}
+    .dot.black{background:#2F2F2F}
+
+    .viz{background:#fff;border:1px solid #eee;border-radius:16px;padding:10px 14px;box-shadow:var(--shadow);}
+    .viz h3{margin:6px 0 2px 8px;font-size:1.05rem;color:#0f172a}
+    .axis text{font-size:12px;fill:#334155}
+    .axis path, .axis line{stroke:#cbd5e1}
+    .bar{rx:8;ry:8}
+
+    .foot{margin-top:26px;color:#64748b;font-size:.95rem}
+    .muted{color:#64748b}
+    .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+    button.btn{
+      border:1px solid #d1d5db;background:#fff;border-radius:999px;padding:8px 12px;
+      font-weight:600;color:#334155;cursor:pointer;
+    }
+    button.btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="card">
-      <h1>🌰 Feed & Learn: Fur Color Story</h1>
-      <div id="app"></div>
-      <div class="note">This is a no-build React placeholder so your iframe has content right now. When ready, replace this file with your full story app (same path).</div>
+    <section class="hero">
+      <h1>Fur Color Story: What Changes When a Squirrel is Gray, Cinnamon, or Black?</h1>
+      <p>Based on the Central Park Squirrel Census (Oct 2018). Scroll the narrative or tap a color to filter the charts. This is the same “Feed & Learn” you remember, rebuilt without a framework so it works in a single file.</p>
+      <div class="tagline">
+        <span class="pill">Distribution</span>
+        <span class="pill">Approach vs. Avoid</span>
+        <span class="pill">Tail & Vocal Activity</span>
+      </div>
+    </section>
+
+    <div class="grid">
+      <!-- Sticky / Interactive Side -->
+      <aside class="panel sticky">
+        <h2>Interactive Lens</h2>
+        <p class="muted">Toggle a focus color to watch the story adapt. The charts pull from the same CSV as your explorer.</p>
+        <div class="btn-row" id="colorButtons">
+          <button class="btn active" data-color="All">All</button>
+          <button class="btn" data-color="Gray"><span class="dot gray"></span> Gray</button>
+          <button class="btn" data-color="Cinnamon"><span class="dot cinnamon"></span> Cinnamon</button>
+          <button class="btn" data-color="Black"><span class="dot black"></span> Black</button>
+        </div>
+
+        <div class="legend">
+          <div class="key"><span class="dot gray"></span> Gray</div>
+          <div class="key"><span class="dot cinnamon"></span> Cinnamon</div>
+          <div class="key"><span class="dot black"></span> Black</div>
+        </div>
+
+        <div class="viz" style="margin-top:12px">
+          <h3>Fur Color Distribution</h3>
+          <svg id="distChart" width="320" height="220"></svg>
+          <p class="note">Count of observations by primary fur color.</p>
+        </div>
+
+        <div class="viz" style="margin-top:12px">
+          <h3>Human Interaction (rate)</h3>
+          <svg id="interactChart" width="320" height="260"></svg>
+          <p class="note">Share of squirrels that <em>approach</em>, are <em>indifferent</em>, or <em>run from</em> people.</p>
+        </div>
+      </aside>
+
+      <!-- Narrative Column -->
+      <main class="story">
+        <div class="card callout">
+          <h3>1) Most squirrels are Gray — Cinnamon is uncommon, Black is rare.</h3>
+          <p>That’s the baseline: expect to meet Gray squirrels. Cinnamon show up but less often; Black are the unicorns of Central Park.</p>
+        </div>
+
+        <div class="card">
+          <h3>2) Human vibe-check: who approaches vs. who bolts?</h3>
+          <p>Approach/avoidance tendencies shift by color. Use the color toggle to see each group’s rate. Surprised by Cinnamon?</p>
+        </div>
+
+        <div class="card warn">
+          <h3>3) Tail flags & twitches ≠ just “cute”</h3>
+          <p>They’re signals. Elevated flagging/twitching often means arousal, alarm, or social negotiation — not always distress, but worth noting.</p>
+        </div>
+
+        <div class="viz">
+          <h3>Tail & Vocal Activity (rate)</h3>
+          <svg id="activityChart" width="680" height="320"></svg>
+          <p class="note">Share of squirrels exhibiting <em>Tail flags</em>, <em>Tail twitches</em>, and <em>Moans</em> (per your current color filter).</p>
+        </div>
+
+        <div class="card">
+          <h3>4) So… should you feed them?</h3>
+          <p>Short answer: no. The data show plenty of <em>approaches</em> without snacks. Human food can harm squirrels and alter behavior.</p>
+        </div>
+
+        <div class="foot">
+          <strong>Data source:</strong> Central Park Squirrel Census (Oct 2018). This view reads <code>squirrel_output.csv</code> from your repo.<br/>
+          <span class="muted">Tip: if this page is placed at <code>assets/embeds/feed.html</code>, the CSV path is resolved as <code>../../squirrel_output.csv</code>.</span>
+        </div>
+      </main>
     </div>
   </div>
 
-  <script type="text/babel">
-    const COLORS = [
-      { name:'Gray', tone:'#8B8680', fun:'Most common in Central Park; highly adaptable foraging.' },
-      { name:'Cinnamon', tone:'#D2691E', fun:'A melanistic variant; photogenic and moderately observed.' },
-      { name:'Black', tone:'#2F2F2F', fun:'Rare sighting; often grabs attention & camera lenses.' },
+  <script>
+    // -------- Config
+    const CSV_PATH = "../../squirrel_output.csv"; // keep relative to /assets/embeds/feed.html
+    const COLORS = ["Gray","Cinnamon","Black"];
+    const COLOR_HEX = { Gray:"#8B8680", Cinnamon:"#D2691E", Black:"#2F2F2F" };
+    const INTERACTIONS = [
+      {key:"Approaches", label:"Approaches"},
+      {key:"Indifferent", label:"Indifferent"},
+      {key:"Runs from", label:"Runs From"}
+    ];
+    const ACTIVITIES = [
+      {key:"Tail flags", label:"Tail Flags"},
+      {key:"Tail twitches", label:"Tail Twitches"},
+      {key:"Moans", label:"Moans"}
     ];
 
-    function Card({title, children}){
-      return <div className="tile"><h3>{title}</h3><div>{children}</div></div>;
+    // -------- State
+    let RAW = [];
+    let CURRENT = "All";
+
+    // -------- Utils
+    const truthy = v => {
+      if (v === undefined || v === null) return false;
+      const s = String(v).trim().toUpperCase();
+      return s === "TRUE" || s === "1" || s === "YES" || s === "Y";
+    };
+
+    function filtered(){
+      if (CURRENT === "All") return RAW;
+      return RAW.filter(d => (d["Primary Fur Color"]||"").trim() === CURRENT);
     }
 
-    function App(){
-      const [bag, setBag] = React.useState([]);
-      const [log, setLog] = React.useState([]);
+    // -------- Load
+    d3.csv(CSV_PATH).then(rows => {
+      // normalize keys & values
+      RAW = rows.map(r => {
+        const o = {};
+        for (const k in r){
+          const nk = k.trim();
+          o[nk] = (r[k] || "").trim();
+        }
+        return o;
+      });
 
-      function feed(color){
-        setBag(prev => [...prev, color]);
-        setLog(prev => [`Fed a ${color.name} squirrel 🍂`, ...prev]);
+      renderAll();
+    }).catch(err => {
+      const container = d3.select(".wrap");
+      container.append("div").attr("class","card warn").html(`
+        <h3>Could not load CSV</h3>
+        <p>Expected to find <code>${CSV_PATH}</code>. Make sure this file exists in your repo and that GitHub Pages is serving it from the same origin.</p>
+      `);
+      console.error(err);
+    });
+
+    // -------- Interactions
+    d3.select("#colorButtons").selectAll("button.btn").on("click", function(){
+      d3.select("#colorButtons").selectAll("button.btn").classed("active", false);
+      d3.select(this).classed("active", true);
+      CURRENT = this.getAttribute("data-color");
+      renderAll();
+    });
+
+    // -------- Charts
+    function renderAll(){
+      renderDistribution();
+      renderInteractions();
+      renderActivity();
+    }
+
+    function renderDistribution(){
+      const data = COLORS.map(c => ({
+        color:c,
+        value: RAW.filter(d => (d["Primary Fur Color"]||"").trim() === c).length
+      }));
+
+      const w = 320, h = 220, m = {t:16,r:12,b:44,l:36};
+      const x = d3.scaleBand().domain(COLORS).range([m.l, w-m.r]).padding(0.28);
+      const y = d3.scaleLinear().domain([0, d3.max(data, d=>d.value)||1]).nice().range([h-m.b, m.t]);
+
+      const svg = d3.select("#distChart");
+      svg.selectAll("*").remove();
+
+      svg.append("g").attr("transform",`translate(0,${h-m.b})`).attr("class","axis").call(d3.axisBottom(x));
+      svg.append("g").attr("transform",`translate(${m.l},0)`).attr("class","axis").call(d3.axisLeft(y).ticks(5));
+
+      svg.selectAll("rect.bar")
+        .data(data)
+        .join("rect")
+          .attr("class","bar")
+          .attr("x", d => x(d.color))
+          .attr("width", x.bandwidth())
+          .attr("y", h-m.b)
+          .attr("height", 0)
+          .attr("fill", d => COLOR_HEX[d.color])
+        .transition().duration(650)
+          .attr("y", d => y(d.value))
+          .attr("height", d => (h-m.b) - y(d.value));
+
+      // focus outline for CURRENT
+      if (CURRENT !== "All"){
+        svg.append("rect")
+          .attr("x", x(CURRENT)-4)
+          .attr("y", m.t-4)
+          .attr("width", x.bandwidth()+8)
+          .attr("height", (h-m.b)-(m.t-4)+8)
+          .attr("fill","none")
+          .attr("stroke","#334155")
+          .attr("stroke-width",2)
+          .attr("stroke-dasharray","6,4");
       }
-
-      return (
-        <div>
-          <div className="grid">
-            {COLORS.map(c => (
-              <Card key={c.name} title={`🐿️ ${c.name}`}>
-                <div style={{display:'flex',alignItems:'center',gap:10}}>
-                  <div style={{width:18,height:18,background:c.tone,borderRadius:4}}/>
-                  <small style={{color:'#555'}}>{c.fun}</small>
-                </div>
-                <div className="cta">
-                  <button className="btn" onClick={()=>feed(c)}>Feed</button>
-                  <button className="btn" onClick={()=>setLog(l => [`Observed ${c.name} tail twitch ✨`, ...l])}>Log Behavior</button>
-                </div>
-              </Card>
-            ))}
-            <Card title="🎒 Snack Bag">
-              <p><strong>Total treats:</strong> {bag.length}</p>
-              <ul>{bag.map((c,i)=><li key={i}>{c.name}</li>)}</ul>
-            </Card>
-            <Card title="📝 Field Notes">
-              <ul>{log.map((t,i)=><li key={i}>{t}</li>)}</ul>
-            </Card>
-          </div>
-        </div>
-      );
     }
 
-    const root = ReactDOM.createRoot(document.getElementById('app'));
-    root.render(<App/>);
+    function rate(count, total){
+      return total > 0 ? (count/total) : 0;
+    }
+
+    function renderInteractions(){
+      const base = CURRENT==="All" ? RAW : filtered();
+      const total = base.length || 1;
+      const series = [
+        {key:"Approaches", label:"Approaches"},
+        {key:"Indifferent", label:"Indifferent"},
+        {key:"Runs from", label:"Runs From"},
+      ].map(it => ({
+        key: it.key,
+        label: it.label,
+        value: rate(base.filter(d => truthy(d[it.key])).length, total)
+      }));
+
+      const w = 320, h = 260, m = {t:16,r:12,b:48,l:44};
+      const x = d3.scaleBand().domain(series.map(d=>d.label)).range([m.l, w-m.r]).padding(0.25);
+      const y = d3.scaleLinear().domain([0, d3.max(series, d=>d.value)||1]).nice().range([h-m.b, m.t]);
+
+      const svg = d3.select("#interactChart");
+      svg.selectAll("*").remove();
+
+      svg.append("g").attr("transform",`translate(0,${h-m.b})`).attr("class","axis")
+        .call(d3.axisBottom(x));
+      svg.append("g").attr("transform",`translate(${m.l},0)`).attr("class","axis")
+        .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format(".0%")));
+
+      const fill = CURRENT==="All" ? "#2c5f2d" : COLOR_HEX[CURRENT];
+
+      svg.selectAll("rect.bar")
+        .data(series)
+        .join("rect")
+          .attr("class","bar")
+          .attr("x", d => x(d.label))
+          .attr("width", x.bandwidth())
+          .attr("y", h-m.b)
+          .attr("height", 0)
+          .attr("fill", fill)
+        .transition().duration(650)
+          .attr("y", d => y(d.value))
+          .attr("height", d => (h-m.b) - y(d.value));
+
+      svg.selectAll("text.val")
+        .data(series)
+        .join("text")
+          .attr("class","val")
+          .attr("x", d => x(d.label)+x.bandwidth()/2)
+          .attr("y", d => y(d.value)-6)
+          .attr("text-anchor","middle")
+          .attr("fill","#334155")
+          .attr("font-size","12px")
+          .text(d => d3.format(".0%")(d.value));
+    }
+
+    function renderActivity(){
+      const base = CURRENT==="All" ? RAW : filtered();
+      const total = base.length || 1;
+
+      const rows = [
+        { key: 'Tail flags', label: 'Tail Flags' },
+        { key: 'Tail twitches', label: 'Tail Twitches' },
+        { key: 'Moans', label: 'Moans' }
+      ].map(a => ({
+        label: a.label,
+        key: a.key,
+        value: total ? (base.filter(d => truthy(d[a.key])).length/total) : 0
+      }));
+
+      const w = 680, h = 320, m = {t:22,r:18,b:64,l:54};
+      const x = d3.scaleBand().domain(rows.map(d=>d.label)).range([m.l, w-m.r]).padding(0.28);
+      const y = d3.scaleLinear().domain([0, d3.max(rows, d=>d.value)||1]).nice().range([h-m.b, m.t]);
+
+      const svg = d3.select("#activityChart");
+      svg.selectAll("*").remove();
+
+      svg.append("g").attr("transform",`translate(0,${h-m.b})`).attr("class","axis")
+        .call(d3.axisBottom(x));
+      svg.append("g").attr("transform",`translate(${m.l},0)`).attr("class","axis")
+        .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format(".0%")));
+
+      const fill = CURRENT==="All" ? "#5d8233" : COLOR_HEX[CURRENT];
+
+      svg.selectAll("rect.bar")
+        .data(rows)
+        .join("rect")
+          .attr("class","bar")
+          .attr("x", d => x(d.label))
+          .attr("width", x.bandwidth())
+          .attr("y", h-m.b)
+          .attr("height", 0)
+          .attr("fill", fill)
+        .transition().duration(650)
+          .attr("y", d => y(d.value))
+          .attr("height", d => (h-m.b) - y(d.value));
+
+      svg.selectAll("text.val")
+        .data(rows)
+        .join("text")
+          .attr("class","val")
+          .attr("x", d => x(d.label)+x.bandwidth()/2)
+          .attr("y", d => y(d.value)-6)
+          .attr("text-anchor","middle")
+          .attr("fill","#334155")
+          .attr("font-size","12px")
+          .text(d => d3.format(".0%")(d.value));
+    }
   </script>
 </body>
 </html>
