@@ -546,11 +546,11 @@
                 .attr("opacity", 0.8);
         });
         
-        // Add landmarks before markers
+        // Add Central Park landmarks BEFORE the squirrel markers
         const landmarks = svg.insert("g", ":first-child")
             .attr("class", "landmarks");
         
-        // Reservoir
+        // The Reservoir (top center - large water body)
         landmarks.append("ellipse")
             .attr("cx", 200)
             .attr("cy", 100)
@@ -569,7 +569,7 @@
             .attr("font-weight", "bold")
             .text("Reservoir");
         
-        // The Lake
+        // The Lake (center - larger irregular water body)
         landmarks.append("ellipse")
             .attr("cx", 200)
             .attr("cy", 280)
@@ -588,7 +588,7 @@
             .attr("font-weight", "bold")
             .text("The Lake");
         
-        // Belvedere Castle
+        // Belvedere Castle (right of the lake)
         const castle = landmarks.append("g");
         castle.append("rect")
             .attr("x", 300)
@@ -620,7 +620,7 @@
             .attr("font-weight", "bold")
             .text("Castle");
         
-        // Bow Bridge
+        // Bow Bridge (elegant arch bridge)
         const bridge = landmarks.append("g");
         bridge.append("path")
             .attr("d", "M 165 295 Q 185 290 205 295")
@@ -642,7 +642,7 @@
             .attr("font-weight", "bold")
             .text("Bow Bridge");
         
-        // Strawberry Fields (fun marker)
+        // Strawberry Fields - ACTUAL STRAWBERRY!
         const strawberry = landmarks.append("g");
         strawberry.append("circle")
             .attr("cx", 70)
@@ -653,6 +653,7 @@
             .attr("stroke", "#228B22")
             .attr("stroke-width", 2)
             .attr("stroke-dasharray", "3,2");
+        // Draw strawberry
         strawberry.append("ellipse")
             .attr("cx", 70)
             .attr("cy", 182)
@@ -661,6 +662,7 @@
             .attr("fill", "#FF0000")
             .attr("stroke", "#8B0000")
             .attr("stroke-width", 1);
+        // Strawberry seeds
         for (let i = 0; i < 8; i++) {
             const angle = (i * Math.PI * 2) / 8;
             strawberry.append("ellipse")
@@ -670,6 +672,7 @@
                 .attr("ry", 1.5)
                 .attr("fill", "#FFD700");
         }
+        // Strawberry leaves
         strawberry.append("polygon")
             .attr("points", "70,170 65,173 70,171 75,173")
             .attr("fill", "#228B22");
@@ -690,7 +693,7 @@
             .attr("font-weight", "bold")
             .text("Fields");
         
-        // Central Park Zoo
+        // Central Park Zoo (bottom right)
         const zoo = landmarks.append("g");
         zoo.append("rect")
             .attr("x", 320)
@@ -721,7 +724,7 @@
             .attr("font-weight", "bold")
             .text("Zoo");
         
-        // Shakespeare Garden
+        // Shakespeare Garden (left side, lower)
         const shakespeare = landmarks.append("g");
         shakespeare.append("rect")
             .attr("x", 50)
@@ -765,7 +768,7 @@
             .attr("font-weight", "bold")
             .text("Garden");
         
-        // Playground with flag
+        // Playground with flag ON the stick
         const playground = landmarks.append("g");
         playground.append("rect")
             .attr("x", 40)
@@ -776,6 +779,7 @@
             .attr("stroke", "#DEB887")
             .attr("stroke-width", 2)
             .attr("rx", 3);
+        // Flag pole (stick)
         playground.append("line")
             .attr("x1", 50)
             .attr("y1", 255)
@@ -783,9 +787,11 @@
             .attr("y2", 272)
             .attr("stroke", "#654321")
             .attr("stroke-width", 2);
+        // Flag ON the pole
         playground.append("polygon")
             .attr("points", "50,255 50,262 58,258.5")
             .attr("fill", "#FF0000");
+        // Slide
         playground.append("path")
             .attr("d", "M 65 260 L 65 255 L 72 268")
             .attr("fill", "#4169E1")
@@ -800,7 +806,7 @@
             .attr("font-weight", "bold")
             .text("Playground");
         
-        // Bird Sanctuary
+        // Bird Sanctuary (bottom left)
         const birdSanctuary = landmarks.append("g");
         birdSanctuary.append("ellipse")
             .attr("cx", 100)
@@ -830,7 +836,28 @@
             .attr("font-weight", "bold")
             .text("Bird Sanctuary");
         
-        // Trees
+        // Great Lawn (middle-right area)
+        const greatLawn = landmarks.append("g");
+        greatLawn.append("rect")
+            .attr("x", 260)
+            .attr("y", 180)
+            .attr("width", 70)
+            .attr("height", 50)
+            .attr("fill", "#7CFC00")
+            .attr("opacity", 0.4)
+            .attr("stroke", "#32CD32")
+            .attr("stroke-width", 2)
+            .attr("stroke-dasharray", "4,2");
+        greatLawn.append("text")
+            .attr("x", 295)
+            .attr("y", 208)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "8px")
+            .attr("fill", "#228B22")
+            .attr("font-weight", "bold")
+            .text("Great Lawn");
+        
+        // MANY MORE AUTUMN TREES!
         const treePositions = [
             {x: 130, y: 150}, {x: 270, y: 140}, {x: 350, y: 180}, {x: 85, y: 300}, 
             {x: 320, y: 350}, {x: 180, y: 390}, {x: 260, y: 440}, {x: 150, y: 90}, 
@@ -1140,7 +1167,7 @@
             
             const dangerSvg = d3.select("#danger-svg");
             
-            // Base safe zone
+            // Base safe zone (dark green) - covers entire map
             dangerSvg.append("rect")
                 .attr("x", 0)
                 .attr("y", 0)
@@ -1148,13 +1175,14 @@
                 .attr("height", 500)
                 .attr("fill", "#2E8B57");
             
-            // Yellow zones
+            // Yellow zones (moderate) - SMALLER so green shows through as the dominant color
             const yellowZones = [
                 {cx: 220, cy: 250, rx: 180, ry: 200},
                 {cx: 340, cy: 350, rx: 140, ry: 160}
             ];
             
             yellowZones.forEach(zone => {
+                // Outermost yellow layer (very wide)
                 dangerSvg.append("ellipse")
                     .attr("cx", zone.cx)
                     .attr("cy", zone.cy)
@@ -1163,6 +1191,7 @@
                     .attr("fill", "#E8E84C")
                     .attr("opacity", 0.5);
                 
+                // Second layer
                 dangerSvg.append("ellipse")
                     .attr("cx", zone.cx)
                     .attr("cy", zone.cy)
@@ -1171,6 +1200,7 @@
                     .attr("fill", "#F5F54C")
                     .attr("opacity", 0.6);
                 
+                // Middle yellow layer with contour
                 dangerSvg.append("ellipse")
                     .attr("cx", zone.cx)
                     .attr("cy", zone.cy)
@@ -1179,6 +1209,7 @@
                     .attr("fill", "#FFD700")
                     .attr("opacity", 0.7);
                 
+                // Add contour line
                 dangerSvg.append("ellipse")
                     .attr("cx", zone.cx)
                     .attr("cy", zone.cy)
@@ -1189,38 +1220,72 @@
                     .attr("stroke-width", 2);
             });
             
-            // Orange zone (dogs spotted)
+            // Orange zone (dogs spotted) - RARE, only one small area
             const orangeZones = [
                 {cx: 340, cy: 350, r: 70}
             ];
             
             orangeZones.forEach(zone => {
-                dangerSvg.append("circle")
-                    .attr("cx", zone.cx)
-                    .attr("cy", zone.cy)
-                    .attr("r", zone.r)
-                    .attr("fill", "#FFB84C")
-                    .attr("opacity", 0.65);
-                
-                dangerSvg.append("circle")
-                    .attr("cx", zone.cx)
-                    .attr("cy", zone.cy)
-                    .attr("r", zone.r * 0.7)
-                    .attr("fill", "#FFA500")
-                    .attr("opacity", 0.75);
-                
-                dangerSvg.append("circle")
-                    .attr("cx", zone.cx)
-                    .attr("cy", zone.cy)
-                    .attr("r", zone.r * 0.7)
-                    .attr("fill", "none")
-                    .attr("stroke", "rgba(255,255,255,0.5)")
-                    .attr("stroke-width", 2);
+                if (zone.r) {
+                    // Outer orange layer
+                    dangerSvg.append("circle")
+                        .attr("cx", zone.cx)
+                        .attr("cy", zone.cy)
+                        .attr("r", zone.r)
+                        .attr("fill", "#FFB84C")
+                        .attr("opacity", 0.65);
+                    
+                    // Middle orange layer
+                    dangerSvg.append("circle")
+                        .attr("cx", zone.cx)
+                        .attr("cy", zone.cy)
+                        .attr("r", zone.r * 0.7)
+                        .attr("fill", "#FFA500")
+                        .attr("opacity", 0.75);
+                    
+                    // Contour line
+                    dangerSvg.append("circle")
+                        .attr("cx", zone.cx)
+                        .attr("cy", zone.cy)
+                        .attr("r", zone.r * 0.7)
+                        .attr("fill", "none")
+                        .attr("stroke", "rgba(255,255,255,0.5)")
+                        .attr("stroke-width", 2);
+                } else {
+                    // Outer orange layer
+                    dangerSvg.append("ellipse")
+                        .attr("cx", zone.cx)
+                        .attr("cy", zone.cy)
+                        .attr("rx", zone.rx)
+                        .attr("ry", zone.ry)
+                        .attr("fill", "#FFB84C")
+                        .attr("opacity", 0.65);
+                    
+                    // Middle orange layer
+                    dangerSvg.append("ellipse")
+                        .attr("cx", zone.cx)
+                        .attr("cy", zone.cy)
+                        .attr("rx", zone.rx * 0.7)
+                        .attr("ry", zone.ry * 0.7)
+                        .attr("fill", "#FFA500")
+                        .attr("opacity", 0.75);
+                    
+                    // Contour line
+                    dangerSvg.append("ellipse")
+                        .attr("cx", zone.cx)
+                        .attr("cy", zone.cy)
+                        .attr("rx", zone.rx * 0.7)
+                        .attr("ry", zone.ry * 0.7)
+                        .attr("fill", "none")
+                        .attr("stroke", "rgba(255,255,255,0.5)")
+                        .attr("stroke-width", 2);
+                }
             });
             
-            // Red danger zone
+            // Red danger zone - ONLY ONE small zone at TOP LEFT (tail twitching/moaning area)
             const redZone = {cx: 120, cy: 120, r: 40};
             
+            // Outer red layer
             dangerSvg.append("circle")
                 .attr("cx", redZone.cx)
                 .attr("cy", redZone.cy)
@@ -1228,6 +1293,7 @@
                 .attr("fill", "#FF6B6B")
                 .attr("opacity", 0.75);
             
+            // Middle layer
             dangerSvg.append("circle")
                 .attr("cx", redZone.cx)
                 .attr("cy", redZone.cy)
@@ -1235,6 +1301,7 @@
                 .attr("fill", "#FF4C4C")
                 .attr("opacity", 0.85);
             
+            // Inner red layer
             dangerSvg.append("circle")
                 .attr("cx", redZone.cx)
                 .attr("cy", redZone.cy)
@@ -1242,6 +1309,7 @@
                 .attr("fill", "#DC143C")
                 .attr("opacity", 0.9);
             
+            // Contour line
             dangerSvg.append("circle")
                 .attr("cx", redZone.cx)
                 .attr("cy", redZone.cy)
@@ -1250,6 +1318,7 @@
                 .attr("stroke", "rgba(255,255,255,0.6)")
                 .attr("stroke-width", 2);
             
+            // Add contour lines for heat map effect - smaller to show more green
             const contourLines = [
                 {cx: 220, cy: 250, rx: 200, ry: 220},
                 {cx: 340, cy: 350, rx: 90, ry: 100},
@@ -1267,21 +1336,506 @@
                     .attr("stroke-width", 1.5);
             });
             
-            // Landmarks on danger map
-            const landmarks = dangerSvg.append("g").attr("class", "landmarks");
-            landmarks.append("ellipse").attr("cx",220).attr("cy",100).attr("rx",95).attr("ry",45).attr("fill","#4682B4").attr("opacity",0.6).attr("stroke","#3A5F8F").attr("stroke-width",2);
-            landmarks.append("text").attr("x",220).attr("y",103).attr("text-anchor","middle").attr("font-size","9px").attr("fill","#FFF").attr("font-weight","bold").text("Reservoir");
-            landmarks.append("ellipse").attr("cx",220).attr("cy",280).attr("rx",80).attr("ry",60).attr("fill","#4682B4").attr("opacity",0.6).attr("stroke","#3A5F8F").attr("stroke-width",2);
-            landmarks.append("text").attr("x",220).attr("y",283).attr("text-anchor","middle").attr("font-size","9px").attr("fill","#FFF").attr("font-weight","bold").text("The Lake");
+            // Add Central Park landmarks to danger map
+            const landmarks = dangerSvg.append("g")
+                .attr("class", "landmarks");
+            
+            // The Reservoir (top center)
+            landmarks.append("ellipse")
+                .attr("cx", 220)
+                .attr("cy", 100)
+                .attr("rx", 95)
+                .attr("ry", 45)
+                .attr("fill", "#4682B4")
+                .attr("opacity", 0.6)
+                .attr("stroke", "#3A5F8F")
+                .attr("stroke-width", 2);
+            landmarks.append("text")
+                .attr("x", 220)
+                .attr("y", 103)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "9px")
+                .attr("fill", "#FFF")
+                .attr("font-weight", "bold")
+                .text("Reservoir");
+            
+            // The Lake (center)
+            landmarks.append("ellipse")
+                .attr("cx", 220)
+                .attr("cy", 280)
+                .attr("rx", 80)
+                .attr("ry", 60)
+                .attr("fill", "#4682B4")
+                .attr("opacity", 0.6)
+                .attr("stroke", "#3A5F8F")
+                .attr("stroke-width", 2);
+            landmarks.append("text")
+                .attr("x", 220)
+                .attr("y", 283)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "9px")
+                .attr("fill", "#FFF")
+                .attr("font-weight", "bold")
+                .text("The Lake");
+            
+            // Belvedere Castle
+            const castle = landmarks.append("g");
+            castle.append("rect")
+                .attr("x", 330)
+                .attr("y", 270)
+                .attr("width", 28)
+                .attr("height", 22)
+                .attr("fill", "#8B7355")
+                .attr("stroke", "#654321")
+                .attr("stroke-width", 1);
+            castle.append("rect")
+                .attr("x", 338)
+                .attr("y", 256)
+                .attr("width", 12)
+                .attr("height", 14)
+                .attr("fill", "#A0826D")
+                .attr("stroke", "#654321")
+                .attr("stroke-width", 1);
+            castle.append("polygon")
+                .attr("points", "338,256 350,256 344,247")
+                .attr("fill", "#8B4513")
+                .attr("stroke", "#654321")
+                .attr("stroke-width", 1);
+            castle.append("text")
+                .attr("x", 344)
+                .attr("y", 305)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "7px")
+                .attr("fill", "#654321")
+                .attr("font-weight", "bold")
+                .text("Castle");
+            
+            // Bow Bridge
+            const bridge = landmarks.append("g");
+            bridge.append("path")
+                .attr("d", "M 185 295 Q 205 290 225 295")
+                .attr("stroke", "#D2691E")
+                .attr("stroke-width", 5)
+                .attr("fill", "none")
+                .attr("stroke-linecap", "round");
+            bridge.append("path")
+                .attr("d", "M 185 298 Q 205 293 225 298")
+                .attr("stroke", "#8B4513")
+                .attr("stroke-width", 2)
+                .attr("fill", "none");
+            bridge.append("text")
+                .attr("x", 205)
+                .attr("y", 310)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "6px")
+                .attr("fill", "#654321")
+                .attr("font-weight", "bold")
+                .text("Bow Bridge");
+            
+            // Strawberry Fields - ACTUAL STRAWBERRY (matching main map)
+            const strawberry = landmarks.append("g");
+            strawberry.append("circle")
+                .attr("cx", 80)
+                .attr("cy", 180)
+                .attr("r", 25)
+                .attr("fill", "#90EE90")
+                .attr("opacity", 0.5)
+                .attr("stroke", "#228B22")
+                .attr("stroke-width", 2)
+                .attr("stroke-dasharray", "3,2");
+            // Draw strawberry
+            strawberry.append("ellipse")
+                .attr("cx", 80)
+                .attr("cy", 182)
+                .attr("rx", 10)
+                .attr("ry", 12)
+                .attr("fill", "#FF0000")
+                .attr("stroke", "#8B0000")
+                .attr("stroke-width", 1);
+            // Strawberry seeds
+            for (let i = 0; i < 8; i++) {
+                const angle = (i * Math.PI * 2) / 8;
+                strawberry.append("ellipse")
+                    .attr("cx", 80 + Math.cos(angle) * 5)
+                    .attr("cy", 182 + Math.sin(angle) * 7)
+                    .attr("rx", 1)
+                    .attr("ry", 1.5)
+                    .attr("fill", "#FFD700");
+            }
+            // Strawberry leaves
+            strawberry.append("polygon")
+                .attr("points", "80,170 75,173 80,171 85,173")
+                .attr("fill", "#228B22");
+            strawberry.append("text")
+                .attr("x", 80)
+                .attr("y", 210)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "7px")
+                .attr("fill", "#228B22")
+                .attr("font-weight", "bold")
+                .text("Strawberry");
+            strawberry.append("text")
+                .attr("x", 80)
+                .attr("y", 218)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "7px")
+                .attr("fill", "#228B22")
+                .attr("font-weight", "bold")
+                .text("Fields");
+            
+            // Central Park Zoo
+            const zoo = landmarks.append("g");
+            zoo.append("rect")
+                .attr("x", 350)
+                .attr("y", 420)
+                .attr("width", 40)
+                .attr("height", 35)
+                .attr("fill", "#DEB887")
+                .attr("stroke", "#8B4513")
+                .attr("stroke-width", 2)
+                .attr("rx", 3);
+            zoo.append("rect")
+                .attr("x", 365)
+                .attr("y", 440)
+                .attr("width", 10)
+                .attr("height", 15)
+                .attr("fill", "#654321");
+            zoo.append("circle")
+                .attr("cx", 370)
+                .attr("cy", 430)
+                .attr("r", 5)
+                .attr("fill", "#8B4513");
+            zoo.append("text")
+                .attr("x", 370)
+                .attr("y", 470)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "8px")
+                .attr("fill", "#654321")
+                .attr("font-weight", "bold")
+                .text("Zoo");
+            
+            // Shakespeare Garden
+            const shakespeare = landmarks.append("g");
+            shakespeare.append("rect")
+                .attr("x", 60)
+                .attr("y", 340)
+                .attr("width", 45)
+                .attr("height", 35)
+                .attr("fill", "#98FB98")
+                .attr("opacity", 0.6)
+                .attr("stroke", "#228B22")
+                .attr("stroke-width", 2)
+                .attr("rx", 5);
+            shakespeare.append("circle")
+                .attr("cx", 70)
+                .attr("cy", 350)
+                .attr("r", 3)
+                .attr("fill", "#FF69B4");
+            shakespeare.append("circle")
+                .attr("cx", 82)
+                .attr("cy", 355)
+                .attr("r", 3)
+                .attr("fill", "#FFD700");
+            shakespeare.append("circle")
+                .attr("cx", 92)
+                .attr("cy", 362)
+                .attr("r", 3)
+                .attr("fill", "#FF6347");
+            shakespeare.append("text")
+                .attr("x", 82)
+                .attr("y", 390)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "6px")
+                .attr("fill", "#228B22")
+                .attr("font-weight", "bold")
+                .text("Shakespeare");
+            shakespeare.append("text")
+                .attr("x", 82)
+                .attr("y", 397)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "6px")
+                .attr("fill", "#228B22")
+                .attr("font-weight", "bold")
+                .text("Garden");
+            
+            // Playground with flag ON the stick (matching main map)
+            const playground = landmarks.append("g");
+            playground.append("rect")
+                .attr("x", 50)
+                .attr("y", 250)
+                .attr("width", 35)
+                .attr("height", 30)
+                .attr("fill", "#FFE4B5")
+                .attr("stroke", "#DEB887")
+                .attr("stroke-width", 2)
+                .attr("rx", 3);
+            // Flag pole (stick)
+            playground.append("line")
+                .attr("x1", 60)
+                .attr("y1", 255)
+                .attr("x2", 60)
+                .attr("y2", 272)
+                .attr("stroke", "#654321")
+                .attr("stroke-width", 2);
+            // Flag ON the pole
+            playground.append("polygon")
+                .attr("points", "60,255 60,262 68,258.5")
+                .attr("fill", "#FF0000");
+            // Slide
+            playground.append("path")
+                .attr("d", "M 75 260 L 75 255 L 82 268")
+                .attr("fill", "#4169E1")
+                .attr("stroke", "#1E90FF")
+                .attr("stroke-width", 1);
+            playground.append("text")
+                .attr("x", 67)
+                .attr("y", 293)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "6px")
+                .attr("fill", "#8B4513")
+                .attr("font-weight", "bold")
+                .text("Playground");
+            
+            // Bird Sanctuary
+            const birdSanctuary = landmarks.append("g");
+            birdSanctuary.append("ellipse")
+                .attr("cx", 110)
+                .attr("cy", 440)
+                .attr("rx", 30)
+                .attr("ry", 25)
+                .attr("fill", "#F0E68C")
+                .attr("opacity", 0.5)
+                .attr("stroke", "#DAA520")
+                .attr("stroke-width", 2);
+            birdSanctuary.append("text")
+                .attr("x", 100)
+                .attr("y", 435)
+                .attr("font-size", "12px")
+                .text("🐦");
+            birdSanctuary.append("text")
+                .attr("x", 115)
+                .attr("y", 445)
+                .attr("font-size", "10px")
+                .text("🦜");
+            birdSanctuary.append("text")
+                .attr("x", 110)
+                .attr("y", 473)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "6px")
+                .attr("fill", "#8B4513")
+                .attr("font-weight", "bold")
+                .text("Bird Sanctuary");
+            
+            // Great Lawn
+            const greatLawn = landmarks.append("g");
+            greatLawn.append("rect")
+                .attr("x", 280)
+                .attr("y", 180)
+                .attr("width", 75)
+                .attr("height", 50)
+                .attr("fill", "#7CFC00")
+                .attr("opacity", 0.3)
+                .attr("stroke", "#32CD32")
+                .attr("stroke-width", 2)
+                .attr("stroke-dasharray", "4,2");
+            greatLawn.append("text")
+                .attr("x", 317)
+                .attr("y", 208)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "8px")
+                .attr("fill", "#228B22")
+                .attr("font-weight", "bold")
+                .text("Great Lawn");
+            
+            // MANY MORE AUTUMN TREES (matching main map)!
+            const treePositions = [
+                {x: 140, y: 150}, {x: 290, y: 140}, {x: 380, y: 180}, {x: 95, y: 300}, 
+                {x: 350, y: 350}, {x: 200, y: 390}, {x: 280, y: 440}, {x: 160, y: 90}, 
+                {x: 370, y: 90}, {x: 70, y: 220}, {x: 410, y: 240}, {x: 260, y: 50},
+                {x: 180, y: 155}, {x: 330, y: 195}, {x: 240, y: 360}, {x: 105, y: 405},
+                {x: 395, y: 320}, {x: 140, y: 470}, {x: 300, y: 480}, {x: 55, y: 380},
+                {x: 415, y: 60}, {x: 355, y: 470}, {x: 225, y: 470}, {x: 165, y: 320}
+            ];
+            
+            const autumnColors = ["#FF6347", "#FF8C00", "#FFD700", "#DC143C", "#8B4513"];
+            
+            treePositions.forEach((pos, index) => {
+                const treeColor = autumnColors[index % autumnColors.length];
+                landmarks.append("rect")
+                    .attr("x", pos.x - 3)
+                    .attr("y", pos.y)
+                    .attr("width", 6)
+                    .attr("height", 15)
+                    .attr("fill", "#8B4513")
+                    .attr("rx", 1);
+                landmarks.append("circle")
+                    .attr("cx", pos.x)
+                    .attr("cy", pos.y - 3)
+                    .attr("r", 14)
+                    .attr("fill", treeColor)
+                    .attr("opacity", 0.7);
+                landmarks.append("circle")
+                    .attr("cx", pos.x - 5)
+                    .attr("cy", pos.y - 8)
+                    .attr("r", 10)
+                    .attr("fill", treeColor)
+                    .attr("opacity", 0.6);
+                landmarks.append("circle")
+                    .attr("cx", pos.x + 5)
+                    .attr("cy", pos.y - 8)
+                    .attr("r", 10)
+                    .attr("fill", treeColor)
+                    .attr("opacity", 0.6);
+            });
+            
+            // Draw actual squirrels on the map
+            // Black squirrel at top left area (near danger zone)
+            drawSquirrelOnMap(80, 100, "Black", dangerSvg);
+            
+            // Gray squirrel at top left (IN the danger zone - tail twitching/moaning)
+            drawSquirrelOnMap(120, 120, "Gray", dangerSvg);
+            
+            // Cinnamon squirrel at bottom right (in orange/moderate zone)
+            drawSquirrelOnMap(340, 350, "Cinnamon", dangerSvg);
+            
+            // Another gray squirrel in safe green zone
+            drawSquirrelOnMap(200, 400, "Gray", dangerSvg);
         }
         
         function drawSquirrelOnMap(x, y, color, svg) {
-            const colorMap = {"Gray":"#888","Cinnamon":"#d2691e","Black":"#2c2c2c"};
+            const colorMap = {
+                "Gray": "#888",
+                "Cinnamon": "#d2691e",
+                "Black": "#2c2c2c"
+            };
+            
             const squirrelColor = colorMap[color];
             const squirrelGroup = svg.append("g");
-            squirrelGroup.append("ellipse").attr("cx",x).attr("cy",y).attr("rx",8).attr("ry",11).attr("fill",squirrelColor);
-            squirrelGroup.append("ellipse").attr("cx",x).attr("cy",y+2).attr("rx",5).attr("ry",8).attr("fill","#FFF5EE").attr("opacity",0.8);
-            squirrelGroup.append("circle").attr("cx",x).attr("cy",y-10).attr("r",6).attr("fill",squirrelColor);
+            
+            // Body
+            squirrelGroup.append("ellipse")
+                .attr("cx", x)
+                .attr("cy", y)
+                .attr("rx", 8)
+                .attr("ry", 11)
+                .attr("fill", squirrelColor)
+                .attr("filter", "drop-shadow(2px 2px 3px rgba(0,0,0,0.3))");
+            
+            // Belly
+            squirrelGroup.append("ellipse")
+                .attr("cx", x)
+                .attr("cy", y + 2)
+                .attr("rx", 5)
+                .attr("ry", 8)
+                .attr("fill", "#FFF5EE")
+                .attr("opacity", 0.8);
+            
+            // Head
+            squirrelGroup.append("circle")
+                .attr("cx", x)
+                .attr("cy", y - 10)
+                .attr("r", 6)
+                .attr("fill", squirrelColor)
+                .attr("filter", "drop-shadow(1px 1px 2px rgba(0,0,0,0.3))");
+            
+            // Ears
+            squirrelGroup.append("circle")
+                .attr("cx", x - 3)
+                .attr("cy", y - 14)
+                .attr("r", 2.5)
+                .attr("fill", squirrelColor);
+            
+            squirrelGroup.append("circle")
+                .attr("cx", x + 3)
+                .attr("cy", y - 14)
+                .attr("r", 2.5)
+                .attr("fill", squirrelColor);
+            
+            // Inner ears
+            squirrelGroup.append("circle")
+                .attr("cx", x - 3)
+                .attr("cy", y - 14)
+                .attr("r", 1.2)
+                .attr("fill", "#FFB6C1");
+            
+            squirrelGroup.append("circle")
+                .attr("cx", x + 3)
+                .attr("cy", y - 14)
+                .attr("r", 1.2)
+                .attr("fill", "#FFB6C1");
+            
+            // Fluffy tail
+            squirrelGroup.append("path")
+                .attr("d", `M ${x} ${y + 6} Q ${x + 12} ${y} ${x + 11} ${y - 16}`)
+                .attr("stroke", squirrelColor)
+                .attr("stroke-width", 6)
+                .attr("fill", "none")
+                .attr("stroke-linecap", "round")
+                .attr("opacity", 0.8)
+                .attr("filter", "drop-shadow(2px 2px 4px rgba(0,0,0,0.2))");
+            
+            // Tail detail
+            squirrelGroup.append("path")
+                .attr("d", `M ${x + 2} ${y + 5} Q ${x + 10} ${y + 2} ${x + 9} ${y - 12}`)
+                .attr("stroke", squirrelColor)
+                .attr("stroke-width", 3)
+                .attr("fill", "none")
+                .attr("opacity", 0.6);
+            
+            // Eyes
+            squirrelGroup.append("circle")
+                .attr("cx", x - 2)
+                .attr("cy", y - 11)
+                .attr("r", 1.5)
+                .attr("fill", "#000");
+            
+            squirrelGroup.append("circle")
+                .attr("cx", x + 2)
+                .attr("cy", y - 11)
+                .attr("r", 1.5)
+                .attr("fill", "#000");
+            
+            // Eye sparkles
+            squirrelGroup.append("circle")
+                .attr("cx", x - 1.5)
+                .attr("cy", y - 11.5)
+                .attr("r", 0.6)
+                .attr("fill", "white");
+            
+            squirrelGroup.append("circle")
+                .attr("cx", x + 2.5)
+                .attr("cy", y - 11.5)
+                .attr("r", 0.6)
+                .attr("fill", "white");
+            
+            // Nose
+            squirrelGroup.append("circle")
+                .attr("cx", x)
+                .attr("cy", y - 8)
+                .attr("r", 1)
+                .attr("fill", "#FFB6C1");
+            
+            // Smile
+            squirrelGroup.append("path")
+                .attr("d", `M ${x - 1.5} ${y - 7.5} Q ${x} ${y - 6.5} ${x + 1.5} ${y - 7.5}`)
+                .attr("stroke", "#654321")
+                .attr("stroke-width", 0.6)
+                .attr("fill", "none");
+            
+            // Paws
+            squirrelGroup.append("ellipse")
+                .attr("cx", x - 5)
+                .attr("cy", y + 8)
+                .attr("rx", 2)
+                .attr("ry", 2.5)
+                .attr("fill", squirrelColor);
+            
+            squirrelGroup.append("ellipse")
+                .attr("cx", x + 5)
+                .attr("cy", y + 8)
+                .attr("rx", 2)
+                .attr("ry", 2.5)
+                .attr("fill", squirrelColor);
         }
         
         window.checkAnswer = checkAnswer;
