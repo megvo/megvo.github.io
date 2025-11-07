@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central Park Sightings</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(to bottom, #FFE4B5 0%, #FFDAB9 50%, #FFE4C4 100%);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        #game-container, #danger-map-container {
+            background: linear-gradient(135deg, #FFF8DC 0%, #FAEBD7 100%);
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: 0 8px 20px rgba(139, 69, 19, 0.2);
+            max-width: 500px;
+            border: 4px solid #DEB887;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #8B4513;
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.5);
+        }
+        
+        .date {
+            text-align: right;
+            color: #A0522D;
+            font-size: 14px;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+        
+        #map-container, #danger-map-display {
+            background: linear-gradient(135deg, #CD853F 0%, #DEB887 100%);
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+            margin-bottom: 20px;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        #map, #danger-svg {
+            background: linear-gradient(to bottom, #228B22 0%, #2E8B57 30%, #DAA520 70%, #CD853F 100%);
+            border-radius: 12px;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .squirrel {
+            cursor: pointer;
+            transition: transform 0.2s;
+            filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.2));
+        }
+        
+        .squirrel:hover {
+            transform: scale(1.2);
+        }
+        
+        .location-marker {
+            cursor: pointer;
+        }
+        
+        .location-marker:hover circle {
+            stroke: #FF8C00;
+            stroke-width: 2;
+        }
+        
+        #bio-panel {
+            background: linear-gradient(135deg, #FFF9F0 0%, #FFFAF5 100%);
+            border-radius: 15px;
+            padding: 20px;
+            display: none;
+            box-shadow: 0 8px 24px rgba(139, 69, 19, 0.4);
+            border: 3px solid #DEB887;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            max-width: 380px;
+            width: 90%;
+        }
+        
+        .bio-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #8B4513;
+            text-align: center;
+        }
+        
+        .bio-content {
+            font-size: 15px;
+            line-height: 1.8;
+            color: #654321;
+            margin-bottom: 15px;
+        }
+        
+        .color-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .color-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            transition: all 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            font-family: 'Georgia', serif;
+        }
+        
+        .color-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        
+        .btn-gray {
+            background: linear-gradient(145deg, #999 0%, #777 100%);
+        }
+        
+        .btn-cinnamon {
+            background: linear-gradient(145deg, #D2691E 0%, #A0522D 100%);
+        }
+        
+        .btn-black {
+            background: linear-gradient(145deg, #3c3c3c 0%, #1c1c1c 100%);
+        }
+        
+        .hint-btn {
+            background: linear-gradient(145deg, #4CAF50 0%, #388E3C 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+            font-family: 'Georgia', serif;
+            display: block;
+            margin: 0 auto 15px;
+        }
+        
+        .hint-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        
+        .legend {
+            display: none;
+            justify-content: space-around;
+            margin-top: 0;
+            font-size: 12px;
+            background: rgba(255,255,255,0.6);
+            padding: 10px;
+            border-radius: 10px;
+        }
+        
+        .legend.visible {
+            display: flex;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: bold;
+            color: #654321;
+        }
+        
+        .legend-circle {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .feedback {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+            min-height: 24px;
+        }
+        
+        .correct {
+            color: #228B22;
+        }
+        
+        .incorrect {
+            color: #DC143C;
+        }
+        
+        .acorn, .falling-squirrel {
+            position: fixed;
+            font-size: 30px;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .compass {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(135deg, #FFF 0%, #F0E68C 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #8B4513;
+            border: 3px solid #DAA520;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            font-size: 16px;
+        }
+        
+        #congratulations {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #FFF8DC 0%, #FFE4B5 100%);
+            padding: 50px;
+            border-radius: 25px;
+            box-shadow: 0 12px 30px rgba(139, 69, 19, 0.4);
+            text-align: center;
+            z-index: 2000;
+            font-size: 32px;
+            font-weight: bold;
+            color: #228B22;
+            border: 5px solid #DAA520;
+        }
+        
+        #danger-alert {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #FFF 0%, #FFE4E1 100%);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 12px 30px rgba(220, 20, 60, 0.4);
+            text-align: center;
+            z-index: 2001;
+            border: 4px solid #DC143C;
+            max-width: 500px;
+        }
+        
+        #danger-alert h2 {
+            color: #DC143C;
+            font-size: 28px;
+            margin: 0 0 20px 0;
+            animation: pulse 1s infinite;
+        }
+        
+        #danger-alert p {
+            color: #654321;
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        #danger-map-container {
+            display: none;
+        }
+        
+        .learn-more-btn {
+            background: linear-gradient(145deg, #DC143C 0%, #8B0000 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 15px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+            font-family: 'Georgia', serif;
+        }
+        
+        .learn-more-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+        }
+        
+        .danger-legend {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+            font-size: 11px;
+            background: rgba(255,255,255,0.9);
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px solid #DC143C;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .danger-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: bold;
+            color: #654321;
+        }
+        
+        .danger-box {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .danger-banner {
+            background: linear-gradient(135deg, #FFE4E1 0%, #FFB6C1 100%);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 3px solid #DC143C;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #8B0000;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            line-height: 1.6;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .progress {
+            text-align: center;
+            color: #8B4513;
+            font-size: 15px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .autumn-leaf {
+            position: absolute;
+            font-size: 20px;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>🍂Central Park Sightings🍂</h1>
+        <div class="progress">🐿️ Click & Match!🌰</div>
+        
+        <div id="map-container">
+            <svg id="map" width="400" height="500"></svg>
+            
+            <div id="bio-panel">
+                <div class="bio-title" id="bio-title"></div>
+                <div class="bio-content" id="bio-content"></div>
+                <div class="color-buttons">
+                    <button class="color-btn btn-gray" onclick="checkAnswer('Gray')">Gray</button>
+                    <button class="color-btn btn-cinnamon" onclick="checkAnswer('Cinnamon')">Cinnamon</button>
+                    <button class="color-btn btn-black" onclick="checkAnswer('Black')">Black</button>
+                </div>
+                <div class="feedback" id="feedback"></div>
+            </div>
+        </div>
+        
+        <button class="hint-btn" onclick="toggleHint()">🐿️Get a Hint!🐿️</button>
+        
+        <div class="legend" id="legend">
+            <div class="legend-item">
+                <div class="legend-circle" style="background-color: #888;"></div>
+                <span>Gray (common)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-circle" style="background-color: #d2691e;"></div>
+                <span>Cinnamon (moderate)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-circle" style="background-color: #2c2c2c;"></div>
+                <span>Black (rare)</span>
+            </div>
+        </div>
+    </div>
+    
+    <div id="congratulations">
+        🎉Congratulations! You are a squirrel expert!🎉
+    </div>
+    
+    <div id="danger-alert">
+        <h2>⚠️ Alert! Alert! ⚠️</h2>
+        <p>Squirrels don't just moan and twitch for fun! They might be in danger!</p>
+        <button class="learn-more-btn" onclick="showDangerMap()">Learn More</button>
+    </div>
+    
+    <div id="danger-map-container">
+        <h1>🚨 Central Park Danger Zones 🚨</h1>
+        <div class="date">Safety Information</div>
+        
+        <div class="danger-banner">
+            ⚠️ Red zones are rare, but never zero! ⚠️<br>
+            Common dangers in Central Park include vehicles, bad nutrients, and even humans.
+        </div>
+        
+        <div id="danger-map-display">
+            <svg id="danger-svg" width="440" height="500"></svg>
+        </div>
+        
+        <div class="danger-legend">
+            <div class="danger-legend-item">
+                <div class="danger-box" style="background-color: #90EE90;"></div>
+                <span>Safe</span>
+            </div>
+            <div class="danger-legend-item">
+                <div class="danger-box" style="background-color: #FFD700;"></div>
+                <span>Moderate</span>
+            </div>
+            <div class="danger-legend-item">
+                <div class="danger-box" style="background-color: #FFA500;"></div>
+                <span>Dogs Spotted</span>
+            </div>
+            <div class="danger-legend-item">
+                <div class="danger-box" style="background-color: #DC143C;"></div>
+                <span>Danger Zone</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const squirrels = [
+            { id: 1, color: "Black", behaviors: ["runs from", "tail flags"], spottedArea: "above ground", spottingType: "rare", x: 220, y: 80 },
+            { id: 2, color: "Gray", behaviors: ["climbing", "moans", "approaches"], spottedArea: "above ground", spottingType: "common", x: 350, y: 130 },
+            { id: 3, color: "Gray", behaviors: ["moans", "tail twitches", "foraging"], spottedArea: "on ground", spottingType: "common", x: 340, y: 220 },
+            { id: 4, color: "Cinnamon", behaviors: ["chasing", "running"], spottedArea: "on ground", spottingType: "moderate", x: 120, y: 260 },
+            { id: 5, color: "Cinnamon", behaviors: ["eating", "chasing"], spottedArea: "on ground", spottingType: "moderate", x: 280, y: 320 },
+            { id: 6, color: "Black", behaviors: ["indifferent", "foraging", "kuks"], spottedArea: "on ground", spottingType: "rare", x: 150, y: 380 },
+            { id: 7, color: "Gray", behaviors: ["moans", "tail twitches", "runs from"], spottedArea: "on ground", spottingType: "common", x: 90, y: 170 },
+            { id: 8, color: "Cinnamon", behaviors: ["chasing", "climbing", "eating"], spottedArea: "above ground", spottingType: "moderate", x: 320, y: 90 },
+            { id: 9, color: "Gray", behaviors: ["foraging", "tail flags", "approaches"], spottedArea: "on ground", spottingType: "common", x: 370, y: 180 },
+            { id: 10, color: "Black", behaviors: ["indifferent", "tail flags"], spottedArea: "above ground", spottingType: "rare", x: 280, y: 60 },
+            { id: 11, color: "Gray", behaviors: ["foraging", "moans", "runs from"], spottedArea: "on ground", spottingType: "common", x: 70, y: 310 },
+            { id: 12, color: "Cinnamon", behaviors: ["chasing", "tail twitches", "eating"], spottedArea: "on ground", spottingType: "moderate", x: 350, y: 430 },
+            { id: 13, color: "Black", behaviors: ["indifferent", "kuks"], spottedArea: "on ground", spottingType: "rare", x: 140, y: 460 },
+            { id: 14, color: "Gray", behaviors: ["foraging", "tail twitches", "climbing"], spottedArea: "above ground", spottingType: "common", x: 250, y: 350 },
+            { id: 15, color: "Cinnamon", behaviors: ["running", "chasing", "approaches"], spottedArea: "on ground", spottingType: "moderate", x: 180, y: 420 },
+            { id: 16, color: "Gray", behaviors: ["foraging", "approaches", "tail flags"], spottedArea: "on ground", spottingType: "common", x: 360, y: 290 },
+            { id: 17, color: "Cinnamon", behaviors: ["eating", "climbing", "chasing"], spottedArea: "above ground", spottingType: "moderate", x: 110, y: 130 },
+            { id: 18, color: "Gray", behaviors: ["foraging", "moans", "tail twitches"], spottedArea: "on ground", spottingType: "common", x: 50, y: 150 },
+            { id: 19, color: "Gray", behaviors: ["runs from", "tail flags", "foraging"], spottedArea: "on ground", spottingType: "common", x: 150, y: 220 },
+            { id: 20, color: "Gray", behaviors: ["approaches", "foraging", "climbing"], spottedArea: "above ground", spottingType: "common", x: 310, y: 400 },
+            { id: 21, color: "Gray", behaviors: ["tail twitches", "moans", "foraging"], spottedArea: "on ground", spottingType: "common", x: 90, y: 440 },
+            { id: 22, color: "Gray", behaviors: ["foraging", "approaches", "runs from"], spottedArea: "on ground", spottingType: "common", x: 380, y: 120 }
+        ];
+        
+        let currentSquirrel = null;
+        let correctCount = 0;
+        const totalSquirrels = squirrels.length;
+        
+        const svg = d3.select("#map");
+        
+        squirrels.forEach(squirrel => {
+            const markerGroup = svg.append("g")
+                .attr("class", "location-marker")
+                .attr("data-id", squirrel.id)
+                .style("cursor", "pointer")
+                .on("click", () => showBio(squirrel));
+            
+            // White background circle for visibility
+            markerGroup.append("circle")
+                .attr("cx", squirrel.x)
+                .attr("cy", squirrel.y)
+                .attr("r", 18)
+                .attr("fill", "#FFFFFF")
+                .attr("opacity", 0.9)
+                .attr("stroke", "#333")
+                .attr("stroke-width", 2);
+            
+            // Draw white squirrel silhouette
+            const squirrelIcon = markerGroup.append("g");
+            
+            // Body
+            squirrelIcon.append("ellipse")
+                .attr("cx", squirrel.x)
+                .attr("cy", squirrel.y + 2)
+                .attr("rx", 6)
+                .attr("ry", 8)
+                .attr("fill", "#666")
+                .attr("opacity", 0.8);
+            
+            // Head
+            squirrelIcon.append("circle")
+                .attr("cx", squirrel.x)
+                .attr("cy", squirrel.y - 6)
+                .attr("r", 5)
+                .attr("fill", "#666")
+                .attr("opacity", 0.8);
+            
+            // Ears
+            squirrelIcon.append("circle")
+                .attr("cx", squirrel.x - 3)
+                .attr("cy", squirrel.y - 10)
+                .attr("r", 2)
+                .attr("fill", "#666")
+                .attr("opacity", 0.8);
+            
+            squirrelIcon.append("circle")
+                .attr("cx", squirrel.x + 3)
+                .attr("cy", squirrel.y - 10)
+                .attr("r", 2)
+                .attr("fill", "#666")
+                .attr("opacity", 0.8);
+            
+            // Fluffy tail
+            squirrelIcon.append("path")
+                .attr("d", `M ${squirrel.x} ${squirrel.y + 6} Q ${squirrel.x + 8} ${squirrel.y + 2} ${squirrel.x + 8} ${squirrel.y - 8}`)
+                .attr("stroke", "#666")
+                .attr("stroke-width", 5)
+                .attr("fill", "none")
+                .attr("stroke-linecap", "round")
+                .attr("opacity", 0.8);
+        });
+        
+        // Add landmarks before markers
+        const landmarks = svg.insert("g", ":first-child")
+            .attr("class", "landmarks");
+        
+        // Reservoir
+        landmarks.append("ellipse")
+            .attr("cx", 200)
+            .attr("cy", 100)
+            .attr("rx", 90)
+            .attr("ry", 45)
+            .attr("fill", "#4682B4")
+            .attr("opacity", 0.7)
+            .attr("stroke", "#3A5F8F")
+            .attr("stroke-width", 2);
+        landmarks.append("text")
+            .attr("x", 200)
+            .attr("y", 103)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "9px")
+            .attr("fill", "#FFF")
+            .attr("font-weight", "bold")
+            .text("Reservoir");
+        
+        // The Lake
+        landmarks.append("ellipse")
+            .attr("cx", 200)
+            .attr("cy", 280)
+            .attr("rx", 75)
+            .attr("ry", 60)
+            .attr("fill", "#4682B4")
+            .attr("opacity", 0.7)
+            .attr("stroke", "#3A5F8F")
+            .attr("stroke-width", 2);
+        landmarks.append("text")
+            .attr("x", 200)
+            .attr("y", 283)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "9px")
+            .attr("fill", "#FFF")
+            .attr("font-weight", "bold")
+            .text("The Lake");
+        
+        // Belvedere Castle
+        const castle = landmarks.append("g");
+        castle.append("rect")
+            .attr("x", 300)
+            .attr("y", 270)
+            .attr("width", 28)
+            .attr("height", 22)
+            .attr("fill", "#8B7355")
+            .attr("stroke", "#654321")
+            .attr("stroke-width", 1);
+        castle.append("rect")
+            .attr("x", 308)
+            .attr("y", 256)
+            .attr("width", 12)
+            .attr("height", 14)
+            .attr("fill", "#A0826D")
+            .attr("stroke", "#654321")
+            .attr("stroke-width", 1);
+        castle.append("polygon")
+            .attr("points", "308,256 320,256 314,247")
+            .attr("fill", "#8B4513")
+            .attr("stroke", "#654321")
+            .attr("stroke-width", 1);
+        castle.append("text")
+            .attr("x", 314)
+            .attr("y", 305)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "7px")
+            .attr("fill", "#654321")
+            .attr("font-weight", "bold")
+            .text("Castle");
+        
+        // Bow Bridge
+        const bridge = landmarks.append("g");
+        bridge.append("path")
+            .attr("d", "M 165 295 Q 185 290 205 295")
+            .attr("stroke", "#D2691E")
+            .attr("stroke-width", 5)
+            .attr("fill", "none")
+            .attr("stroke-linecap", "round");
+        bridge.append("path")
+            .attr("d", "M 165 298 Q 185 293 205 298")
+            .attr("stroke", "#8B4513")
+            .attr("stroke-width", 2)
+            .attr("fill", "none");
+        bridge.append("text")
+            .attr("x", 185)
+            .attr("y", 310)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "6px")
+            .attr("fill", "#654321")
+            .attr("font-weight", "bold")
+            .text("Bow Bridge");
+        
+        // Strawberry Fields (fun marker)
+        const strawberry = landmarks.append("g");
+        strawberry.append("circle")
+            .attr("cx", 70)
+            .attr("cy", 180)
+            .attr("r", 25)
+            .attr("fill", "#90EE90")
+            .attr("opacity", 0.6)
+            .attr("stroke", "#228B22")
+            .attr("stroke-width", 2)
+            .attr("stroke-dasharray", "3,2");
+        strawberry.append("ellipse")
+            .attr("cx", 70)
+            .attr("cy", 182)
+            .attr("rx", 10)
+            .attr("ry", 12)
+            .attr("fill", "#FF0000")
+            .attr("stroke", "#8B0000")
+            .attr("stroke-width", 1);
+        for (let i = 0; i < 8; i++) {
+            const angle = (i * Math.PI * 2) / 8;
+            strawberry.append("ellipse")
+                .attr("cx", 70 + Math.cos(angle) * 5)
+                .attr("cy", 182 + Math.sin(angle) * 7)
+                .attr("rx", 1)
+                .attr("ry", 1.5)
+                .attr("fill", "#FFD700");
+        }
+        strawberry.append("polygon")
+            .attr("points", "70,170 65,173 70,171 75,173")
+            .attr("fill", "#228B22");
+        strawberry.append("text")
+            .attr("x", 70)
+            .attr("y", 210)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "7px")
+            .attr("fill", "#228B22")
+            .attr("font-weight", "bold")
+            .text("Strawberry");
+        strawberry.append("text")
+            .attr("x", 70)
+            .attr("y", 218)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "7px")
+            .attr("fill", "#228B22")
+            .attr("font-weight", "bold")
+            .text("Fields");
+        
+        // Central Park Zoo
+        const zoo = landmarks.append("g");
+        zoo.append("rect")
+            .attr("x", 320)
+            .attr("y", 420)
+            .attr("width", 40)
+            .attr("height", 35)
+            .attr("fill", "#DEB887")
+            .attr("stroke", "#8B4513")
+            .attr("stroke-width", 2)
+            .attr("rx", 3);
+        zoo.append("rect")
+            .attr("x", 335)
+            .attr("y", 440)
+            .attr("width", 10)
+            .attr("height", 15)
+            .attr("fill", "#654321");
+        zoo.append("circle")
+            .attr("cx", 340)
+            .attr("cy", 430)
+            .attr("r", 5)
+            .attr("fill", "#8B4513");
+        zoo.append("text")
+            .attr("x", 340)
+            .attr("y", 470)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "8px")
+            .attr("fill", "#654321")
+            .attr("font-weight", "bold")
+            .text("Zoo");
+        
+        // Shakespeare Garden
+        const shakespeare = landmarks.append("g");
+        shakespeare.append("rect")
+            .attr("x", 50)
+            .attr("y", 340)
+            .attr("width", 45)
+            .attr("height", 35)
+            .attr("fill", "#98FB98")
+            .attr("opacity", 0.7)
+            .attr("stroke", "#228B22")
+            .attr("stroke-width", 2)
+            .attr("rx", 5);
+        shakespeare.append("circle")
+            .attr("cx", 60)
+            .attr("cy", 350)
+            .attr("r", 3)
+            .attr("fill", "#FF69B4");
+        shakespeare.append("circle")
+            .attr("cx", 72)
+            .attr("cy", 355)
+            .attr("r", 3)
+            .attr("fill", "#FFD700");
+        shakespeare.append("circle")
+            .attr("cx", 82)
+            .attr("cy", 362)
+            .attr("r", 3)
+            .attr("fill", "#FF6347");
+        shakespeare.append("text")
+            .attr("x", 72)
+            .attr("y", 390)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "6px")
+            .attr("fill", "#228B22")
+            .attr("font-weight", "bold")
+            .text("Shakespeare");
+        shakespeare.append("text")
+            .attr("x", 72)
+            .attr("y", 397)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "6px")
+            .attr("fill", "#228B22")
+            .attr("font-weight", "bold")
+            .text("Garden");
+        
+        // Playground with flag
+        const playground = landmarks.append("g");
+        playground.append("rect")
+            .attr("x", 40)
+            .attr("y", 250)
+            .attr("width", 35)
+            .attr("height", 30)
+            .attr("fill", "#FFE4B5")
+            .attr("stroke", "#DEB887")
+            .attr("stroke-width", 2)
+            .attr("rx", 3);
+        playground.append("line")
+            .attr("x1", 50)
+            .attr("y1", 255)
+            .attr("x2", 50)
+            .attr("y2", 272)
+            .attr("stroke", "#654321")
+            .attr("stroke-width", 2);
+        playground.append("polygon")
+            .attr("points", "50,255 50,262 58,258.5")
+            .attr("fill", "#FF0000");
+        playground.append("path")
+            .attr("d", "M 65 260 L 65 255 L 72 268")
+            .attr("fill", "#4169E1")
+            .attr("stroke", "#1E90FF")
+            .attr("stroke-width", 1);
+        playground.append("text")
+            .attr("x", 57)
+            .attr("y", 293)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "6px")
+            .attr("fill", "#8B4513")
+            .attr("font-weight", "bold")
+            .text("Playground");
+        
+        // Bird Sanctuary
+        const birdSanctuary = landmarks.append("g");
+        birdSanctuary.append("ellipse")
+            .attr("cx", 100)
+            .attr("cy", 440)
+            .attr("rx", 30)
+            .attr("ry", 25)
+            .attr("fill", "#F0E68C")
+            .attr("opacity", 0.6)
+            .attr("stroke", "#DAA520")
+            .attr("stroke-width", 2);
+        birdSanctuary.append("text")
+            .attr("x", 90)
+            .attr("y", 435)
+            .attr("font-size", "12px")
+            .text("🐦");
+        birdSanctuary.append("text")
+            .attr("x", 105)
+            .attr("y", 445)
+            .attr("font-size", "10px")
+            .text("🦜");
+        birdSanctuary.append("text")
+            .attr("x", 100)
+            .attr("y", 473)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "6px")
+            .attr("fill", "#8B4513")
+            .attr("font-weight", "bold")
+            .text("Bird Sanctuary");
+        
+        // Trees
+        const treePositions = [
+            {x: 130, y: 150}, {x: 270, y: 140}, {x: 350, y: 180}, {x: 85, y: 300}, 
+            {x: 320, y: 350}, {x: 180, y: 390}, {x: 260, y: 440}, {x: 150, y: 90}, 
+            {x: 340, y: 90}, {x: 60, y: 220}, {x: 380, y: 240}, {x: 240, y: 50},
+            {x: 170, y: 155}, {x: 300, y: 195}, {x: 220, y: 360}, {x: 95, y: 405},
+            {x: 365, y: 320}, {x: 130, y: 470}, {x: 280, y: 480}, {x: 45, y: 380},
+            {x: 385, y: 60}, {x: 325, y: 470}, {x: 205, y: 470}, {x: 155, y: 320}
+        ];
+        
+        const autumnColors = ["#FF6347", "#FF8C00", "#FFD700", "#DC143C", "#8B4513"];
+        
+        treePositions.forEach((pos, index) => {
+            const treeColor = autumnColors[index % autumnColors.length];
+            landmarks.append("rect")
+                .attr("x", pos.x - 3)
+                .attr("y", pos.y)
+                .attr("width", 6)
+                .attr("height", 15)
+                .attr("fill", "#8B4513")
+                .attr("rx", 1);
+            landmarks.append("circle")
+                .attr("cx", pos.x)
+                .attr("cy", pos.y - 3)
+                .attr("r", 14)
+                .attr("fill", treeColor)
+                .attr("opacity", 0.8);
+            landmarks.append("circle")
+                .attr("cx", pos.x - 5)
+                .attr("cy", pos.y - 8)
+                .attr("r", 10)
+                .attr("fill", treeColor)
+                .attr("opacity", 0.7);
+            landmarks.append("circle")
+                .attr("cx", pos.x + 5)
+                .attr("cy", pos.y - 8)
+                .attr("r", 10)
+                .attr("fill", treeColor)
+                .attr("opacity", 0.7);
+        });
+        
+        function toggleHint() {
+            const legend = document.getElementById("legend");
+            legend.classList.toggle("visible");
+        }
+        
+        function drawSquirrel(x, y, color, parentGroup) {
+            const colorMap = {
+                "Gray": "#888",
+                "Cinnamon": "#d2691e",
+                "Black": "#2c2c2c"
+            };
+            
+            const squirrelColor = colorMap[color];
+            
+            parentGroup.append("ellipse")
+                .attr("cx", x)
+                .attr("cy", y)
+                .attr("rx", 10)
+                .attr("ry", 14)
+                .attr("fill", squirrelColor)
+                .attr("filter", "drop-shadow(2px 2px 3px rgba(0,0,0,0.3))");
+            
+            parentGroup.append("ellipse")
+                .attr("cx", x)
+                .attr("cy", y + 2)
+                .attr("rx", 6)
+                .attr("ry", 10)
+                .attr("fill", "#FFF5EE")
+                .attr("opacity", 0.8);
+            
+            parentGroup.append("circle")
+                .attr("cx", x)
+                .attr("cy", y - 12)
+                .attr("r", 8)
+                .attr("fill", squirrelColor)
+                .attr("filter", "drop-shadow(1px 1px 2px rgba(0,0,0,0.3))");
+            
+            parentGroup.append("circle")
+                .attr("cx", x - 4)
+                .attr("cy", y - 17)
+                .attr("r", 3)
+                .attr("fill", squirrelColor);
+            
+            parentGroup.append("circle")
+                .attr("cx", x + 4)
+                .attr("cy", y - 17)
+                .attr("r", 3)
+                .attr("fill", squirrelColor);
+            
+            parentGroup.append("circle")
+                .attr("cx", x - 4)
+                .attr("cy", y - 17)
+                .attr("r", 1.5)
+                .attr("fill", "#FFB6C1");
+            
+            parentGroup.append("circle")
+                .attr("cx", x + 4)
+                .attr("cy", y - 17)
+                .attr("r", 1.5)
+                .attr("fill", "#FFB6C1");
+            
+            parentGroup.append("path")
+                .attr("d", `M ${x} ${y + 8} Q ${x + 15} ${y} ${x + 14} ${y - 20}`)
+                .attr("stroke", squirrelColor)
+                .attr("stroke-width", 8)
+                .attr("fill", "none")
+                .attr("stroke-linecap", "round")
+                .attr("opacity", 0.8)
+                .attr("filter", "drop-shadow(2px 2px 4px rgba(0,0,0,0.2))");
+            
+            parentGroup.append("path")
+                .attr("d", `M ${x + 2} ${y + 6} Q ${x + 12} ${y + 2} ${x + 11} ${y - 15}`)
+                .attr("stroke", squirrelColor)
+                .attr("stroke-width", 4)
+                .attr("fill", "none")
+                .attr("opacity", 0.6);
+            
+            parentGroup.append("circle")
+                .attr("cx", x - 2.5)
+                .attr("cy", y - 13)
+                .attr("r", 2)
+                .attr("fill", "#000");
+            
+            parentGroup.append("circle")
+                .attr("cx", x + 2.5)
+                .attr("cy", y - 13)
+                .attr("r", 2)
+                .attr("fill", "#000");
+            
+            parentGroup.append("circle")
+                .attr("cx", x - 1.8)
+                .attr("cy", y - 14)
+                .attr("r", 0.8)
+                .attr("fill", "white");
+            
+            parentGroup.append("circle")
+                .attr("cx", x + 3.2)
+                .attr("cy", y - 14)
+                .attr("r", 0.8)
+                .attr("fill", "white");
+            
+            parentGroup.append("circle")
+                .attr("cx", x)
+                .attr("cy", y - 10)
+                .attr("r", 1.2)
+                .attr("fill", "#FFB6C1");
+            
+            parentGroup.append("path")
+                .attr("d", `M ${x - 2} ${y - 9} Q ${x} ${y - 8} ${x + 2} ${y - 9}`)
+                .attr("stroke", "#654321")
+                .attr("stroke-width", 0.8)
+                .attr("fill", "none");
+            
+            parentGroup.append("ellipse")
+                .attr("cx", x - 6)
+                .attr("cy", y + 10)
+                .attr("rx", 2.5)
+                .attr("ry", 3)
+                .attr("fill", squirrelColor);
+            
+            parentGroup.append("ellipse")
+                .attr("cx", x + 6)
+                .attr("cy", y + 10)
+                .attr("rx", 2.5)
+                .attr("ry", 3)
+                .attr("fill", squirrelColor);
+        }
+        
+        function showBio(squirrel) {
+            if (squirrel.matched) {
+                return;
+            }
+            
+            currentSquirrel = squirrel;
+            
+            const bioTitle = `🍂 Location ${squirrel.id} 🍂`;
+            const behaviorText = squirrel.behaviors.join(", ");
+            const bioContent = `
+                <strong>🐿️ Behaviors:</strong> ${behaviorText}<br>
+                <strong>📍 Spotted:</strong> ${squirrel.spottedArea}<br>
+                <strong>👀 Sighting frequency:</strong> ${squirrel.spottingType}
+            `;
+            
+            document.getElementById("bio-title").textContent = bioTitle;
+            document.getElementById("bio-content").innerHTML = bioContent;
+            document.getElementById("bio-panel").style.display = "block";
+            document.getElementById("feedback").textContent = "";
+            document.getElementById("feedback").className = "feedback";
+            
+            document.querySelector(".progress").innerHTML = `🌰 ${correctCount}/${totalSquirrels} squirrels matched correctly 🌰`;
+        }
+        
+        function checkAnswer(selectedColor) {
+            if (!currentSquirrel || currentSquirrel.matched) {
+                return;
+            }
+            
+            const feedback = document.getElementById("feedback");
+            
+            if (selectedColor === currentSquirrel.color) {
+                feedback.textContent = "Correct! 🎉";
+                feedback.className = "feedback correct";
+                
+                currentSquirrel.matched = true;
+                correctCount++;
+                
+                const markerGroup = svg.select(`g[data-id="${currentSquirrel.id}"]`);
+                markerGroup.selectAll("*").remove();
+                
+                drawSquirrel(currentSquirrel.x, currentSquirrel.y, currentSquirrel.color, markerGroup);
+                
+                rainAcorns();
+                
+                document.querySelector(".progress").innerHTML = `🌰 ${correctCount}/${totalSquirrels} squirrels matched correctly 🌰`;
+                
+                setTimeout(() => {
+                    if (correctCount === totalSquirrels) {
+                        showCongratulations();
+                    } else {
+                        document.getElementById("bio-panel").style.display = "none";
+                        currentSquirrel = null;
+                    }
+                }, 1500);
+                
+            } else {
+                feedback.textContent = "Try again! 🍁";
+                feedback.className = "feedback incorrect";
+            }
+        }
+        
+        function rainAcorns() {
+            const acornCount = 15;
+            
+            for (let i = 0; i < acornCount; i++) {
+                setTimeout(() => {
+                    const acorn = document.createElement("div");
+                    acorn.className = "acorn";
+                    acorn.textContent = "🌰";
+                    acorn.style.left = Math.random() * window.innerWidth + "px";
+                    acorn.style.top = "-50px";
+                    document.body.appendChild(acorn);
+                    
+                    const duration = 2000 + Math.random() * 1000;
+                    const rotation = Math.random() * 720 - 360;
+                    
+                    acorn.animate([
+                        { transform: "translateY(0) rotate(0deg)", opacity: 1 },
+                        { transform: `translateY(${window.innerHeight + 100}px) rotate(${rotation}deg)`, opacity: 0.5 }
+                    ], {
+                        duration: duration,
+                        easing: "ease-in"
+                    });
+                    
+                    setTimeout(() => acorn.remove(), duration);
+                }, i * 50);
+            }
+        }
+        
+        function rainSquirrelsAndAcorns() {
+            const items = ['🐿️', '🌰', '🍂', '🍁'];
+            const itemCount = 40;
+            
+            for (let i = 0; i < itemCount; i++) {
+                setTimeout(() => {
+                    const item = document.createElement("div");
+                    item.className = "falling-squirrel";
+                    item.textContent = items[Math.floor(Math.random() * items.length)];
+                    item.style.left = Math.random() * window.innerWidth + "px";
+                    item.style.top = "-50px";
+                    item.style.fontSize = (20 + Math.random() * 20) + "px";
+                    document.body.appendChild(item);
+                    
+                    const duration = 3000 + Math.random() * 2000;
+                    const rotation = Math.random() * 1080 - 540;
+                    
+                    item.animate([
+                        { transform: "translateY(0) rotate(0deg)", opacity: 1 },
+                        { transform: `translateY(${window.innerHeight + 100}px) rotate(${rotation}deg)`, opacity: 0.3 }
+                    ], {
+                        duration: duration,
+                        easing: "ease-in"
+                    });
+                    
+                    setTimeout(() => item.remove(), duration);
+                }, i * 30);
+            }
+        }
+        
+        function showCongratulations() {
+            document.getElementById("bio-panel").style.display = "none";
+            document.getElementById("congratulations").style.display = "block";
+            
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => rainSquirrelsAndAcorns(), i * 700);
+            }
+            
+            setTimeout(() => {
+                document.getElementById("congratulations").style.display = "none";
+                document.getElementById("danger-alert").style.display = "block";
+            }, 5000);
+        }
+        
+        function showDangerMap() {
+            document.getElementById("danger-alert").style.display = "none";
+            document.getElementById("game-container").style.display = "none";
+            document.getElementById("danger-map-container").style.display = "block";
+            
+            const dangerSvg = d3.select("#danger-svg");
+            
+            // Base safe zone
+            dangerSvg.append("rect")
+                .attr("x", 0)
+                .attr("y", 0)
+                .attr("width", 440)
+                .attr("height", 500)
+                .attr("fill", "#2E8B57");
+            
+            // Yellow zones
+            const yellowZones = [
+                {cx: 220, cy: 250, rx: 180, ry: 200},
+                {cx: 340, cy: 350, rx: 140, ry: 160}
+            ];
+            
+            yellowZones.forEach(zone => {
+                dangerSvg.append("ellipse")
+                    .attr("cx", zone.cx)
+                    .attr("cy", zone.cy)
+                    .attr("rx", zone.rx)
+                    .attr("ry", zone.ry)
+                    .attr("fill", "#E8E84C")
+                    .attr("opacity", 0.5);
+                
+                dangerSvg.append("ellipse")
+                    .attr("cx", zone.cx)
+                    .attr("cy", zone.cy)
+                    .attr("rx", zone.rx * 0.85)
+                    .attr("ry", zone.ry * 0.85)
+                    .attr("fill", "#F5F54C")
+                    .attr("opacity", 0.6);
+                
+                dangerSvg.append("ellipse")
+                    .attr("cx", zone.cx)
+                    .attr("cy", zone.cy)
+                    .attr("rx", zone.rx * 0.7)
+                    .attr("ry", zone.ry * 0.7)
+                    .attr("fill", "#FFD700")
+                    .attr("opacity", 0.7);
+                
+                dangerSvg.append("ellipse")
+                    .attr("cx", zone.cx)
+                    .attr("cy", zone.cy)
+                    .attr("rx", zone.rx * 0.7)
+                    .attr("ry", zone.ry * 0.7)
+                    .attr("fill", "none")
+                    .attr("stroke", "rgba(255,255,255,0.4)")
+                    .attr("stroke-width", 2);
+            });
+            
+            // Orange zone (dogs spotted)
+            const orangeZones = [
+                {cx: 340, cy: 350, r: 70}
+            ];
+            
+            orangeZones.forEach(zone => {
+                dangerSvg.append("circle")
+                    .attr("cx", zone.cx)
+                    .attr("cy", zone.cy)
+                    .attr("r", zone.r)
+                    .attr("fill", "#FFB84C")
+                    .attr("opacity", 0.65);
+                
+                dangerSvg.append("circle")
+                    .attr("cx", zone.cx)
+                    .attr("cy", zone.cy)
+                    .attr("r", zone.r * 0.7)
+                    .attr("fill", "#FFA500")
+                    .attr("opacity", 0.75);
+                
+                dangerSvg.append("circle")
+                    .attr("cx", zone.cx)
+                    .attr("cy", zone.cy)
+                    .attr("r", zone.r * 0.7)
+                    .attr("fill", "none")
+                    .attr("stroke", "rgba(255,255,255,0.5)")
+                    .attr("stroke-width", 2);
+            });
+            
+            // Red danger zone
+            const redZone = {cx: 120, cy: 120, r: 40};
+            
+            dangerSvg.append("circle")
+                .attr("cx", redZone.cx)
+                .attr("cy", redZone.cy)
+                .attr("r", redZone.r)
+                .attr("fill", "#FF6B6B")
+                .attr("opacity", 0.75);
+            
+            dangerSvg.append("circle")
+                .attr("cx", redZone.cx)
+                .attr("cy", redZone.cy)
+                .attr("r", redZone.r * 0.75)
+                .attr("fill", "#FF4C4C")
+                .attr("opacity", 0.85);
+            
+            dangerSvg.append("circle")
+                .attr("cx", redZone.cx)
+                .attr("cy", redZone.cy)
+                .attr("r", redZone.r * 0.55)
+                .attr("fill", "#DC143C")
+                .attr("opacity", 0.9);
+            
+            dangerSvg.append("circle")
+                .attr("cx", redZone.cx)
+                .attr("cy", redZone.cy)
+                .attr("r", redZone.r * 0.55)
+                .attr("fill", "none")
+                .attr("stroke", "rgba(255,255,255,0.6)")
+                .attr("stroke-width", 2);
+            
+            const contourLines = [
+                {cx: 220, cy: 250, rx: 200, ry: 220},
+                {cx: 340, cy: 350, rx: 90, ry: 100},
+                {cx: 120, cy: 120, rx: 60, ry: 60}
+            ];
+            
+            contourLines.forEach(line => {
+                dangerSvg.append("ellipse")
+                    .attr("cx", line.cx)
+                    .attr("cy", line.cy)
+                    .attr("rx", line.rx)
+                    .attr("ry", line.ry)
+                    .attr("fill", "none")
+                    .attr("stroke", "rgba(255,255,255,0.25)")
+                    .attr("stroke-width", 1.5);
+            });
+            
+            // Landmarks on danger map
+            const landmarks = dangerSvg.append("g").attr("class", "landmarks");
+            landmarks.append("ellipse").attr("cx",220).attr("cy",100).attr("rx",95).attr("ry",45).attr("fill","#4682B4").attr("opacity",0.6).attr("stroke","#3A5F8F").attr("stroke-width",2);
+            landmarks.append("text").attr("x",220).attr("y",103).attr("text-anchor","middle").attr("font-size","9px").attr("fill","#FFF").attr("font-weight","bold").text("Reservoir");
+            landmarks.append("ellipse").attr("cx",220).attr("cy",280).attr("rx",80).attr("ry",60).attr("fill","#4682B4").attr("opacity",0.6).attr("stroke","#3A5F8F").attr("stroke-width",2);
+            landmarks.append("text").attr("x",220).attr("y",283).attr("text-anchor","middle").attr("font-size","9px").attr("fill","#FFF").attr("font-weight","bold").text("The Lake");
+        }
+        
+        function drawSquirrelOnMap(x, y, color, svg) {
+            const colorMap = {"Gray":"#888","Cinnamon":"#d2691e","Black":"#2c2c2c"};
+            const squirrelColor = colorMap[color];
+            const squirrelGroup = svg.append("g");
+            squirrelGroup.append("ellipse").attr("cx",x).attr("cy",y).attr("rx",8).attr("ry",11).attr("fill",squirrelColor);
+            squirrelGroup.append("ellipse").attr("cx",x).attr("cy",y+2).attr("rx",5).attr("ry",8).attr("fill","#FFF5EE").attr("opacity",0.8);
+            squirrelGroup.append("circle").attr("cx",x).attr("cy",y-10).attr("r",6).attr("fill",squirrelColor);
+        }
+        
+        window.checkAnswer = checkAnswer;
+        window.showDangerMap = showDangerMap;
+        window.toggleHint = toggleHint;
+    </script>
+</body>
+</html>

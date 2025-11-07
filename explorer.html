@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Squirrel Census: Behavior & Human Interaction Explorer</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,"Helvetica Neue",Arial,"Apple Color Emoji","Segoe UI Emoji";background:linear-gradient(135deg,#f5f7fa 0,#c3cfe2 100%);padding:20px;min-height:100vh}
+    .container{max-width:1200px;margin:0 auto;background:#fff;border-radius:20px;padding:32px;box-shadow:0 18px 50px rgba(0,0,0,.08)}
+    h1{color:#2c5f2d;text-align:center;margin-bottom:8px;font-size:2.1rem}
+    .subtitle{text-align:center;color:#666;margin-bottom:20px;font-size:.98rem}
+    .controls{display:flex;justify-content:center;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+    .control-group{display:flex;flex-direction:column;gap:6px}
+    .control-group label{font-weight:600;color:#333;font-size:.9rem}
+    .filter-btn{padding:10px 18px;border:2px solid #2c5f2d;background:#fff;color:#2c5f2d;border-radius:22px;cursor:pointer;font-weight:600;transition:.25s;font-size:.95rem}
+    .filter-btn:hover{background:#2c5f2d;color:#fff;transform:translateY(-2px);box-shadow:0 4px 12px rgba(44,95,45,.25)}
+    .filter-btn.active{background:#2c5f2d;color:#fff}
+    select{padding:10px 16px;border:2px solid #2c5f2d;border-radius:22px;font-size:1rem;cursor:pointer;background:#fff;color:#2c5f2d;font-weight:600}
+    .visualization{margin-top:10px}
+    .tooltip{position:absolute;background:rgba(0,0,0,.9);color:#fff;padding:10px 12px;border-radius:8px;font-size:13px;pointer-events:none;opacity:0;transition:opacity .25s;z-index:1000;max-width:300px}
+    .bar{transition:all .25s}
+    .bar:hover{opacity:.85;stroke:#333;stroke-width:2}
+    .axis text{font-size:12px}
+    .axis-label{font-size:13px;font-weight:600}
+    .legend{display:flex;justify-content:center;gap:24px;margin-top:12px;flex-wrap:wrap}
+    .legend-item{display:flex;align-items:center;gap:8px}
+    .legend-color{width:16px;height:16px;border-radius:4px}
+    .stats{display:flex;justify-content:space-around;margin-top:20px;gap:16px;flex-wrap:wrap}
+    .stat-card{background:linear-gradient(135deg,#667eea 0,#764ba2 100%);color:#fff;padding:16px;border-radius:14px;text-align:center;min-width:150px;flex:1}
+    .stat-card h3{font-size:1.6rem;margin-bottom:4px}
+    .stat-card p{font-size:.85rem;opacity:.9}
+    .info-box{background:#f8f9fa;border-left:4px solid #2c5f2d;padding:12px;margin-top:16px;border-radius:8px}
+    .info-box p{color:#555;line-height:1.55}
+    .notice{background:#fff4e5;border-left:4px solid #ff9100;color:#6b4b00;padding:10px 12px;border-radius:8px;margin-bottom:14px;font-size:.9rem}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🐿️ Squirrel Behavior in Central Park 🐿️</h1>
+    <p class="subtitle">Explore October 2018 observations: fur color, activity, and human interactions.</p>
+    <div class="notice"><strong>Data Source:</strong> This page loads <code>squirrel_output.csv</code> from the same folder. Make sure that file is alongside <code>explorer.html</code> on GitHub Pages.</div>
+
+    <div class="controls">
+      <div class="control-group">
+        <label>Fur Color Filter:</label>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="filter-btn active" data-color="All">All Colors</button>
+          <button class="filter-btn" data-color="Gray">Gray</button>
+          <button class="filter-btn" data-color="Cinnamon">Cinnamon</button>
+          <button class="filter-btn" data-color="Black">Black</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <label>View Type:</label>
+        <select id="viewType">
+          <option value="behavior">Behavior Patterns</option>
+          <option value="interaction">Human Interaction</option>
+          <option value="activity">Activity Levels</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="visualization">
+      <svg id="chart"></svg>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="stats" id="stats"></div>
+    <div class="info-box">
+      <p><strong>Tutorial:</strong> Filter by color, switch views, and hover bars for counts and percentages.</p>
+    </div>
+  </div>
+
+  <div class="tooltip" id="tooltip"></div>
+
+  <script>
+    const margin = {top: 40, right: 30, bottom: 80, left: 60};
+    const width = 1000 - margin.left - margin.right;
+    const height = 480 - margin.top - margin.bottom;
+
+    const svg = d3.select('#chart')
+      .attr('width', width + margin.left + margin.right)
+      .attr('height', height + margin.top + margin.bottom)
+      .append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
+
+    const tooltip = d3.select('#tooltip');
+
+    const colorSchemes = { Gray:'#8B8680', Cinnamon:'#D2691E', Black:'#2F2F2F' };
+
+    let rawData = [];
+    let currentFilter = 'All';
+    let currentView = 'behavior';
+
+    function isTrue(value){
+      if(!value) return false;
+      const str = String(value).trim().toUpperCase();
+      return str === 'TRUE' || str === '1' || str === 'YES';
+    }
+
+    // Prefer local CSV; if it fails, fall back to your GitHub raw URL (optional override)
+    const LOCAL_CSV = 'squirrel_output.csv';
+    const FALLBACK_CSV = null; // e.g., 'https://raw.githubusercontent.com/<user>/<repo>/main/squirrel_output.csv'
+
+    function loadCsv(url){
+      return d3.csv(url).then(data => data).catch(err => null);
+    }
+
+    (async function init(){
+      let data = await loadCsv(LOCAL_CSV);
+      if(!data && FALLBACK_CSV){
+        data = await loadCsv(FALLBACK_CSV);
+      }
+      if(!data){
+        const container = document.querySelector('.container');
+        const warn = document.createElement('div');
+        warn.className = 'notice';
+        warn.innerHTML = 'Could not load <code>squirrel_output.csv</code>. Make sure it is in the same folder as <code>explorer.html</code>.';
+        container.prepend(warn);
+        return;
+      }
+
+      rawData = data.map(d => {
+        const cleaned = {};
+        Object.keys(d).forEach(key => {
+          const cleanKey = key.trim();
+          cleaned[cleanKey] = d[key] ? d[key].trim() : '';
+        });
+        return cleaned;
+      });
+
+      updateVisualization();
+    })();
+
+    d3.selectAll('.filter-btn').on('click', function(){
+      d3.selectAll('.filter-btn').classed('active', false);
+      d3.select(this).classed('active', true);
+      currentFilter = this.dataset.color;
+      updateVisualization();
+    });
+
+    d3.select('#viewType').on('change', function(){
+      currentView = this.value;
+      updateVisualization();
+    });
+
+    function updateVisualization(){
+      if(rawData.length === 0) return;
+
+      let filtered = rawData;
+      if(currentFilter !== 'All'){
+        filtered = rawData.filter(d => d['Primary Fur Color'] === currentFilter);
+      }
+
+      let chartData, xLabel, yLabel, title;
+
+      if(currentView === 'behavior'){
+        chartData = prepareBehaviorData(filtered);
+        xLabel = 'Behavior Type'; yLabel = 'Number of Observations'; title = 'Squirrel Behavior Patterns';
+      } else if(currentView === 'interaction'){
+        chartData = prepareInteractionData(filtered);
+        xLabel = 'Interaction Type'; yLabel = 'Number of Squirrels'; title = 'Human–Squirrel Interactions';
+      } else {
+        chartData = prepareActivityData(filtered);
+        xLabel = 'Activity Type'; yLabel = 'Number of Observations'; title = 'Squirrel Activity Levels';
+      }
+
+      drawChart(chartData, xLabel, yLabel, title);
+      updateStats(filtered, chartData);
+    }
+
+    function prepareBehaviorData(data){
+      const behaviors = ['Running','Climbing','Eating','Foraging','Chasing'];
+      return behaviors.map(b => {
+        const count = data.filter(d => isTrue(d[b])).length;
+        return { category: b, value: count, percentage: data.length ? (count/data.length*100).toFixed(1) : 0 };
+      });
+    }
+
+    function prepareInteractionData(data){
+      const approaches = data.filter(d => isTrue(d['Approaches'])).length;
+      const indifferent = data.filter(d => isTrue(d['Indifferent'])).length;
+      const runsFrom = data.filter(d => isTrue(d['Runs from'])).length;
+      return [
+        { category:'Approaches', value:approaches, percentage:data.length ? (approaches/data.length*100).toFixed(1) : 0 },
+        { category:'Indifferent', value:indifferent, percentage:data.length ? (indifferent/data.length*100).toFixed(1) : 0 },
+        { category:'Runs From', value:runsFrom, percentage:data.length ? (runsFrom/data.length*100).toFixed(1) : 0 },
+      ];
+    }
+
+    function prepareActivityData(data){
+      const activities = [
+        { key:'Kuks', label:'Kuks' },
+        { key:'Quaas', label:'Quaas' },
+        { key:'Moans', label:'Moans' },
+        { key:'Tail flags', label:'Tail Flags' },
+        { key:'Tail twitches', label:'Tail Twitches' },
+      ];
+      return activities.map(a => {
+        const count = data.filter(d => isTrue(d[a.key])).length;
+        return { category:a.label, value:count, percentage:data.length ? (count/data.length*100).toFixed(1) : 0 };
+      });
+    }
+
+    function drawChart(data, xLabel, yLabel, title){
+      svg.selectAll('*').remove();
+
+      const x = d3.scaleBand().domain(data.map(d => d.category)).range([0, width]).padding(0.2);
+      const maxVal = d3.max(data, d => d.value) || 10;
+      const y = d3.scaleLinear().domain([0, maxVal]).nice().range([height, 0]);
+
+      const color = d3.scaleOrdinal().domain(data.map(d => d.category)).range(['#2c5f2d','#97bc62','#d4a373','#8b7355','#5d8233']);
+
+      svg.selectAll('.bar')
+        .data(data)
+        .join(enter => enter.append('rect')
+          .attr('class','bar')
+          .attr('x', d => x(d.category))
+          .attr('width', x.bandwidth())
+          .attr('y', height)
+          .attr('height', 0)
+          .attr('fill', d => color(d.category))
+          .attr('rx', 8)
+          .call(enter => enter.transition().duration(700)
+            .attr('y', d => y(d.value))
+            .attr('height', d => height - y(d.value))
+          ),
+          update => update.call(update => update.transition().duration(700)
+            .attr('x', d => x(d.category))
+            .attr('width', x.bandwidth())
+            .attr('y', d => y(d.value))
+            .attr('height', d => height - y(d.value))
+          )
+        )
+        .on('mouseover', function(event, d){
+          d3.select(this).transition().duration(150).attr('opacity', .8);
+          tooltip.style('opacity',1).html(`<strong>${d.category}</strong><br/>Count: ${d.value}<br/>Percentage: ${d.percentage}%`)
+            .style('left', (event.pageX + 10) + 'px')
+            .style('top', (event.pageY - 10) + 'px');
+        })
+        .on('mouseout', function(){
+          d3.select(this).transition().duration(150).attr('opacity', 1);
+          tooltip.style('opacity',0);
+        });
+
+      svg.append('g').attr('class','axis').attr('transform',`translate(0,${height})`).call(d3.axisBottom(x))
+        .selectAll('text').attr('transform','rotate(-45)').style('text-anchor','end').attr('dx','-.8em').attr('dy','.15em');
+
+      svg.append('g').attr('class','axis').call(d3.axisLeft(y));
+
+      svg.append('text').attr('class','axis-label').attr('text-anchor','middle').attr('x', width/2).attr('y', height+65).text(xLabel);
+      svg.append('text').attr('class','axis-label').attr('text-anchor','middle').attr('transform','rotate(-90)').attr('x', -height/2).attr('y', -42).text(yLabel);
+      svg.append('text').attr('x', width/2).attr('y', -10).attr('text-anchor','middle').style('font-size','18px').style('font-weight','600').style('fill','#2c5f2d').text(title);
+
+      updateLegend(data, color);
+    }
+
+    function updateLegend(data, color){
+      const legend = d3.select('#legend');
+      legend.selectAll('*').remove();
+      const items = legend.selectAll('.legend-item').data(data).join('div').attr('class','legend-item');
+      items.append('div').attr('class','legend-color').style('background-color', d => color(d.category));
+      items.append('span').text(d => `${d.category}: ${d.value}`);
+    }
+
+    function updateStats(data, chartData){
+      const stats = d3.select('#stats'); stats.selectAll('*').remove();
+      const total = data.length;
+      const mostCommon = chartData.reduce((a,b) => a.value > b.value ? a : b, {category:'—', value:0});
+      const avg = chartData.length ? d3.mean(chartData, d => d.value).toFixed(0) : 0;
+      const statsData = [{label:'Total Squirrels', value: total},{label:'Most Common', value: mostCommon.category},{label:'Avg Count', value: avg}];
+      stats.selectAll('.stat-card').data(statsData).join('div').attr('class','stat-card').html(d => `<h3>${d.value}</h3><p>${d.label}</p>`);
+    }
+  </script>
+</body>
+</html>
