@@ -1,0 +1,69 @@
+:root{
+  --bg:#0b0b0f;
+  --panel:#11131a;
+  --text:#e6e8ee;
+  --muted:#a6adbb;
+  --border:#262b36;
+  --accent:#9fd8ff;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  background:linear-gradient(180deg,#0a0b10 0%, #0b0b0f 100%);
+  color:var(--text);
+  line-height:1.6;
+}
+
+.container{width:min(1100px,92%);margin:0 auto}
+.section{padding:72px 0}
+.section.alt{background:var(--panel)}
+.narrow{max-width:720px}
+
+.site-header{
+  position:sticky;top:0;z-index:50;
+  background:rgba(10,11,16,0.75);backdrop-filter:saturate(140%) blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.header-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700}
+.logo{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--panel);border:1px solid var(--border)}
+.name{letter-spacing:.2px}
+
+.nav a{color:var(--text);text-decoration:none;margin-left:18px;opacity:.9}
+.nav a:hover{opacity:1}
+.btn{
+  display:inline-block;padding:10px 14px;border:1px solid var(--border);border-radius:999px;text-decoration:none;color:var(--text);
+  background:transparent;transition:.2s ease;cursor:pointer
+}
+.btn.primary{border-color:transparent;background:linear-gradient(135deg,#4cc9ff, #a1fae7)}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.25)}
+
+.hero{padding:80px 0 40px}
+.hero-inner h1{font-size:clamp(28px,5vw,48px);margin:0 0 10px}
+.hero-inner p{color:var(--muted);max-width:720px;margin:0 0 18px}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap}
+
+.grid{display:grid;gap:20px}
+.cards{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.card{
+  background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px
+}
+.card h3{margin-top:0;margin-bottom:8px}
+.card-embed{margin-top:10px;background:#0e1117;border:1px dashed var(--border);border-radius:12px;padding:8px}
+
+.inline{display:inline-block;margin-top:8px;color:var(--accent);text-decoration:none}
+.inline:hover{text-decoration:underline}
+
+.steps{margin:0;padding-left:18px}
+pre.code{background:#0e1117;border:1px solid var(--border);border-radius:12px;padding:14px;overflow:auto}
+
+.contact label{display:block;margin:14px 0}
+.contact input,.contact textarea{
+  width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);
+  background:#0d0f14;color:var(--text)
+}
+
+.site-footer{border-top:1px solid var(--border);padding:24px 0;color:var(--muted)}
